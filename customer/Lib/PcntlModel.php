@@ -10,6 +10,8 @@
  */
 namespace customer\Lib;
 
+use customer\Lib\Config;
+
 class PcntlModel
 {
 
@@ -105,12 +107,12 @@ class PcntlModel
 
     public function setMaxsize()
     {
-        $this->MaxSize = Config::$MaxSize;
+        $this->MaxSize = Config::MaxSize;
     }
 
     public function setDaemonize()
     {
-        $this->Daemonize = Config::$Daemonize;
+        $this->Daemonize = Config::Daemonize;
     }
 
     /**

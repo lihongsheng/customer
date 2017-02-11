@@ -227,6 +227,10 @@ class PcntlModel
     }
 
 
+    /**
+     * 重新注册信号处理函数
+     *
+     */
     protected function reinstallSignal()
     {
         // uninstall stop signal handler
@@ -260,11 +264,18 @@ class PcntlModel
         }
     }
 
+
+    /**
+     * 重启任务
+     */
     protected function reload()
     {
 
     }
 
+    /**
+     * 写入状态
+     */
     protected function writeToStatusFile()
     {
 
@@ -272,7 +283,7 @@ class PcntlModel
 
 
     /**
-     * Stop.
+     * 停止所有的任务
      *
      * @return void
      */

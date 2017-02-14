@@ -8,10 +8,11 @@
  *
  * $Id$
  */
-
+//error_reporting(0);
 define('ROOT_PATH',dirname(__FILE__).DIRECTORY_SEPARATOR);
-define('APP_PATH',ROOT_PATH.'Application');
-define('LOG_APTH',ROOT_PATH.'log');
-define('CACHE_PATH',ROOT_PATH,'cache');
+define('APP_PATH',ROOT_PATH.'Application'.DIRECTORY_SEPARATOR);
+define('LOG_APTH',ROOT_PATH.'log'.DIRECTORY_SEPARATOR);
+define('CACHE_PATH',ROOT_PATH,'cache'.DIRECTORY_SEPARATOR);
 require_once APP_PATH.'/bootstrap.php';
+
 (new bootstrap())->init()->run();

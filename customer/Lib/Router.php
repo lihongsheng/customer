@@ -46,7 +46,7 @@ class Router
 
 
 
-    public function setParams()
+    protected function setParams()
     {
         if($this->pathInfo == ''){
             $this->setDefaultPath();
@@ -64,10 +64,10 @@ class Router
             }
         }
 
-        $this->returnArray['classPath'] = APP_PATH.$this->module.'/'.$this->method.'.php';
+        $this->returnArray['classPath'] = APP_PATH.$this->module.'/Controller/'.$this->method.'.php';
         $this->returnArray['action'] = $this->action."Action";
-        if(!file_exists(APP_PATH.$this->module.'/'.$this->method.'.php')){
-            throw new \Exception(" method not find ");
+        if(!file_exists(APP_PATH.$this->returnArray['classPath'])){
+           throw new \Exception(" file not find ".$this->returnArray['classPath']);
         }
 
         return;

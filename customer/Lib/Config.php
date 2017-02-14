@@ -43,4 +43,18 @@ class Config
 
     const WorkPort  = '';
 
+    static $router = [
+        'defaultModule' => 'web',
+        'defaultMethod' => 'index',
+        'defaultAction' => 'index',
+        'ErrorModule'   =>'Error',
+        'ErrorMethod'   =>'Index',
+        'ErrorAction'   => 'index',
+        'urlSuffix'     => '',
+        'Modules' => [
+            'web','Cli'
+        ]
+
+    ];
+
 }

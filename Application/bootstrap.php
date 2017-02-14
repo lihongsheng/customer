@@ -27,8 +27,9 @@ class bootstrap
     {
         if(self::$ClassMap[$class]) {
             include_once self::$ClassMap[$class];
-        } else {
-            exit($class);
+        } elseif(false !== stripos($class,'\\')) {
+            $name = str_replace('\\','/',$class);
+            exit($name);
         }
     }
 

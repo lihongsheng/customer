@@ -25,11 +25,20 @@ class bootstrap
      */
     public static function autoload($class)
     {
+        //$index = md5($class);
         if(self::$ClassMap[$class]) {
             include_once self::$ClassMap[$class];
         } elseif(false !== stripos($class,'\\')) {
             $name = str_replace('\\','/',$class);
-            exit($name);
+            if(false !== stripos($name,'customer')){
+                self::$ClassMap[$class] = ROOT_PATH.$name.'.php';
+                require_once self::$ClassMap[$class];
+            } elseif(file_exists(APP_PATH.$name.'.php')) {
+                self::$ClassMap[$class] = APP_PATH.$name.'.php';
+                require_once self::$ClassMap[$class];
+            } else {
+                throw new Exception("NOT FIND ".$name.'.php');
+            }
         }
     }
 

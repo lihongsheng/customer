@@ -65,8 +65,10 @@ abstract class SocketSelect
     }*/
 
     /**
-     * 接受请求
      * @param $acceptLink
+     * @param $server
+     * @return array
+     * @throws \Exception
      */
     public static function accept(& $acceptLink,& $server)
     {
@@ -117,7 +119,7 @@ abstract class SocketSelect
         }
     }
 
-    public static function stop($sign)
+    public static function close($sign)
     {
         socket_close($sign);
     }

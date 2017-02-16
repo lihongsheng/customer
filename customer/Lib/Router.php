@@ -51,7 +51,7 @@ class Router
         if($this->pathInfo == ''){
             $this->setDefaultPath();
         } else {
-            $uri = explode('/',$this->pathInfo);
+            $uri = explode('/',trim($this->pathInfo,'/'));
             $this->module = ucfirst(strtolower($uri[0]));
             $this->method = ucfirst(strtolower($uri[1]));
             $this->action = strtolower($uri[2]);
@@ -66,7 +66,7 @@ class Router
 
         $this->returnArray['classPath'] = APP_PATH.$this->module.'/Controller/'.$this->method.'.php';
         $this->returnArray['action'] = $this->action."Action";
-        if(!file_exists(APP_PATH.$this->returnArray['classPath'])){
+        if(!file_exists($this->returnArray['classPath'])){
            throw new \Exception(" file not find ".$this->returnArray['classPath']);
         }
 

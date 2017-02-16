@@ -81,8 +81,9 @@ class bootstrap
         $router->dispatcher();
         $class = $router->getModule().'\\'.'Controller\\'.$router->getMethod();
         $action = $router->getAction().'Action';
-        $model = new $class;
-        if(!in_array($action,get_class_methods($model))) {
+        $model = new $class('',$router);
+
+        if(!method_exists($model,$action)) {
             throw new \Exception("NOT FIND action IN ".$router->getMethod());
         }
         $model->$action();

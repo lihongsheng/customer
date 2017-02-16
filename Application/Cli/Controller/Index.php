@@ -9,3 +9,26 @@
  * $Id$
  */
 namespace Cli\Controller;
+
+use customer\Lib\Config;
+use customer\Lib\Controller;
+use customer\Lib\WebSocket;
+
+class Index extends Controller
+{
+
+    public function startServerAction()
+    {
+        echo 'hello word;'.PHP_EOL;
+    }
+
+    public function startRegisterAction()
+    {
+
+    }
+
+    public function startWorkAction()
+    {
+
+    }
+}

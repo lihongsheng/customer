@@ -31,7 +31,7 @@ class Config
 
     const DbPassWord = '';
 
-    const RegisterIp = '127.0.0.1';
+    const RegisterIp = '.0.0.0';
 
     const RegisterPort = '54540';
 

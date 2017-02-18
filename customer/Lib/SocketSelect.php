@@ -18,6 +18,7 @@ abstract class SocketSelect
     private $_connectValues = array();
     private $_registerLink = array();
     private $_workLink    = array();
+    private static $_connectionIdRecorder;
 
 
     const SOCKET_TYPE_ACCEPT = 1;
@@ -124,6 +125,19 @@ abstract class SocketSelect
         socket_close($sign);
     }
 
+    /**
+     * 生成connection id
+     * @return int
+     */
+    public function generateConnectionId()
+    {
+        $max_unsigned_int = 4294967295;
+        if (self::$_connectionIdRecorder >= $max_unsigned_int) {
+            self::$_connectionIdRecorder = 1;
+        }
+        $id = self::$_connectionIdRecorder ++;
+        return $id;
+    }
 
     abstract public static function encode($msg);
     abstract public static function decode($buffer);

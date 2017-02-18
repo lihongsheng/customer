@@ -14,6 +14,8 @@ use customer\Lib\Config;
 use customer\Lib\Controller;
 use customer\Lib\WebSocket;
 
+use Cli\Model\Register;
+
 class Index extends Controller
 {
 
@@ -24,6 +26,8 @@ class Index extends Controller
 
     public function startRegisterAction()
     {
+        $register = new Register();
+        $register->run();
 
     }
 

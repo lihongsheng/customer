@@ -84,10 +84,22 @@ class PcntlModel
     public $masterWork;
 
 
-    public function __construct()
+    /**
+     * 重定向输出的文件
+     * @var string
+     */
+    protected $StdoutFile = '/dev/null';
+
+
+    /**
+     * @param int $maxSize
+     * @throws Exception
+     * @throws \Exception
+     */
+    public function __construct($maxSize = 4)
     {
         $this->setDaemonize();
-        $this->setMaxsize();
+        $this->setMaxsize($maxSize);
         $this->daemonize();
         $this->resetStd();
         $this->installSignal();
@@ -105,9 +117,9 @@ class PcntlModel
         $this->workRun =  $run;
     }
 
-    public function setMaxsize()
+    private function setMaxsize($maxSize)
     {
-        $this->MaxSize = Config::MaxSize;
+        $this->MaxSize = $maxSize ? $maxSize : Config::MaxSize;
     }
 
     public function setDaemonize()
@@ -147,7 +159,7 @@ class PcntlModel
     public function start() {
 
         $i = 0;
-        while ($i<PcntlModel::$MaxSize) {
+        while ($i<$this->MaxSize) {
             $i++;
             $pid = pcntl_fork();
             if($pid === 0) {

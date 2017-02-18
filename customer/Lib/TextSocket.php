@@ -16,6 +16,7 @@ use customer\Lib\SocketSelect;
 class TextSocket extends SocketSelect
 {
 
+
     public static function handshake($buffer)
     {
 

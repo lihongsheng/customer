@@ -103,7 +103,7 @@ class PcntlModel
         $this->daemonize();
         $this->resetStd();
         $this->installSignal();
-        $this->monitorWorkers();
+        //$this->monitorWorkers();
     }
 
     /**
@@ -174,6 +174,7 @@ class PcntlModel
         }
         //主进程ID
         $this->MasterId = posix_getpid();
+        $this->monitorWorkers();
 
     }
 

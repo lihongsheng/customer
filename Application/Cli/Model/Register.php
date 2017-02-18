@@ -49,6 +49,7 @@ class Register
     {
         $this->_links['s'] = $this->master;
         $server = ['s'=>$this->master];
+        echo Config::RegisterPort.PHP_EOL;
         Timer::init();
         Timer::add(1,array($this,'ping'));
         while(true){

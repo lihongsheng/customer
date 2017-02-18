@@ -30,8 +30,8 @@ class Timer
      */
     public static function signalHandle()
     {
-        pcntl_alarm(1);
         self::tick();
+        pcntl_alarm(1);
     }
 
 
@@ -63,9 +63,9 @@ class Timer
             self::$_taskId[$id] = $id;
         }
 
-        if (empty(self::$_tasks)) {
+        /*if (empty(self::$_tasks)) {
             pcntl_alarm(1);
-        }
+        }*/
 
         $time_now = time();
         $run_time = $time_now + $time_interval;

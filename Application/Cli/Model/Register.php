@@ -49,11 +49,13 @@ class Register
     {
         $this->_links['s'] = $this->master;
         $server = ['s'=>$this->master];
-        echo Config::RegisterPort.PHP_EOL;
+        //echo Config::RegisterPort.PHP_EOL;
         Timer::init();
         Timer::add(1,array($this,'ping'));
         while(true){
-            $data = TextSocket::accept($this->_links, $server);
+            pcntl_signal_dispatch();
+            $links = $this->_links;
+            $data = TextSocket::accept($links, $server);
             switch($data['type']) {
                 case TextSocket::SOCKET_TYPE_ACCEPT://来之客户端的链接
                     $id = TextSocket::generateConnectionId();
@@ -136,6 +138,7 @@ class Register
      */
     public function ping()
     {
+        echo 'PING '.PHP_EOL;
         if(!empty($this->_links)){
             foreach($this->_links as $val){
                 TextSocket::sendOne(json_encode(['linkType'=>self::LINK_TYPE_PING,'eventType'=>self::EVENT_TYPE_PING,'msgBody'=>[]]),$val);

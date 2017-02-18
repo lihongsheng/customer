@@ -31,13 +31,13 @@ class Config
 
     const DbPassWord = '';
 
-    const RegisterIp = '.0.0.0';
+    const RegisterIp = '0.0.0.0';
 
-    const RegisterPort = '54540';
+    const RegisterPort = '44540';
 
     const GetwayIp   = '0.0.0.0';
 
-    const GetwayPort = '56560';
+    const GetwayPort = '46560';
 
     const WorkIp    = '127.0.0.1';
 

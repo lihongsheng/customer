@@ -37,7 +37,7 @@ abstract class SocketSelect
         socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);
         socket_bind($listen, $ip, $port);
         socket_listen($listen);
-        return self::$listen;
+        return $listen;
     }
 
 
@@ -78,9 +78,12 @@ abstract class SocketSelect
 
         if($links === false) {
             $errorId = socket_last_error();
-            throw new \Exception(" accept ERROR ".socket_strerror($errorId));
+            if($errorId != 4) {
+                throw new \Exception(" accept ERROR ".$errorId.'-'.EINTR.' string '.socket_strerror($errorId));
+            }
         }
         $buffer = '';
+        //$links = is_array($links) ? $links : [];
         foreach($links as $k=>$r){
             if(in_array($r,$server)) {//有新的链接进来
                 return ['link'=>socket_accept($server),

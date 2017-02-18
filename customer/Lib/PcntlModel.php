@@ -334,7 +334,8 @@ class PcntlModel
                         unset($this->works[$pid]);
                         $this->forkOne();
                         if ($status !== 0) {
-                            $this->log("worker[:$pid] exit with status $status");
+                           // $this->log("worker[:$pid] exit with status $status");
+                            throw new \Exception("worker[:$pid] exit with status $status");
                         }
                     }
                 } else {

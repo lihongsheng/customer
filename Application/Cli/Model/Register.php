@@ -51,7 +51,8 @@ class Register
         $server = ['s'=>$this->master];
         //echo Config::RegisterPort.PHP_EOL;
         Timer::init();
-        Timer::add(1,array($this,'ping'));
+        pcntl_signal_dispatch();
+        echo Timer::add(1,array($this,'ping')).PHP_EOL;
         while(true){
             pcntl_signal_dispatch();
             $links = $this->_links;
@@ -71,7 +72,7 @@ class Register
 
     protected function linkTypeWork(array $data)
     {
-        $msg = json_decode($data['msg'],true);
+        $msg = json_decode(TextSocket::decode($data['msg']),true);
         switch($msg['linkType']){
             case Register::LINK_TYPE_GETWAY://来之getway服务器
 
@@ -114,7 +115,7 @@ class Register
                             }
                             $msg = json_encode(['msgBody'=>$tmp,'linkType'=>'work','eventType'=>'addWork']);
                             unset($tmp);
-                            TextSocket::sendMutily($msg,$this->getwayLink);
+                            TextSocket::sendMutily(TextSocket::encode($msg),$this->getwayLink);
                         }
                     }
                 }
@@ -138,10 +139,13 @@ class Register
      */
     public function ping()
     {
-        echo 'PING '.PHP_EOL;
+        //echo 'PING '.PHP_EOL;
         if(!empty($this->_links)){
             foreach($this->_links as $val){
-                TextSocket::sendOne(json_encode(['linkType'=>self::LINK_TYPE_PING,'eventType'=>self::EVENT_TYPE_PING,'msgBody'=>[]]),$val);
+                if($val == $this->master)  {
+                    continue;
+                }
+                TextSocket::sendOne(TextSocket::encode(json_encode(['linkType'=>self::LINK_TYPE_PING,'eventType'=>self::EVENT_TYPE_PING,'msgBody'=>[]])),$val);
             }
         }
     }

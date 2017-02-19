@@ -19,7 +19,7 @@ class Timer
 
     public static function init()
     {
-        pcntl_signal(SIGALRM, array('\customer\Lib\Timer', 'signalHandle'), false);
+        pcntl_signal(SIGALRM, array('customer\Lib\Timer', 'signalHandle'), false);
     }
 
 
@@ -31,7 +31,7 @@ class Timer
     public static function signalHandle()
     {
         self::tick();
-        pcntl_alarm(1);
+        //pcntl_alarm(1);
     }
 
 
@@ -66,7 +66,7 @@ class Timer
         /*if (empty(self::$_tasks)) {
             pcntl_alarm(1);
         }*/
-
+        pcntl_alarm(1);
         $time_now = time();
         $run_time = $time_now + $time_interval;
         if (!isset(self::$_tasks[$run_time])) {

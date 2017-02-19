@@ -112,14 +112,16 @@ abstract class SocketSelect
 
     public static function sendOne($msg,$sign)
     {
-        socket_write(self::encode($msg),$sign);
+        //socket_write(self::encode($msg),$sign);
+        socket_write($msg,$sign);
     }
 
     public static function sendMutily($msg,array $signs)
     {
-        $msg = self::encode($msg);
+        //$msg = self::encode($msg);
         foreach($signs as $r) {
-            socket_write(self::encode($msg),$r);
+            //socket_write(self::encode($msg),$r);
+            socket_write($msg,$r);
         }
     }
 

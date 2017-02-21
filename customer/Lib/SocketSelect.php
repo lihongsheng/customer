@@ -73,20 +73,20 @@ abstract class SocketSelect
      */
     public static function accept(& $acceptLink,& $server)
     {
+        $links = $acceptLink;
 
-        $links = socket_select($acceptLink,$write=null,$except=null,null);
-
-        if($links === false) {
+        $intLinks = socket_select($links,$write=null,$except=null,0);//无阻赛运行
+        if($intLinks === false) {
             $errorId = socket_last_error();
             if($errorId != 4) {
                 throw new \Exception(" accept ERROR ".$errorId.'-'.EINTR.' string '.socket_strerror($errorId));
             }
         }
         $buffer = '';
-        //$links = is_array($links) ? $links : [];
+
         foreach($links as $k=>$r){
             if(in_array($r,$server)) {//有新的链接进来
-                return ['link'=>socket_accept($server),
+                return ['link'=>socket_accept($r),
                     'type'=>self::SOCKET_TYPE_ACCEPT,
                     'key'=>array_search($r,$server),
                     'msg'=>''];
@@ -107,13 +107,15 @@ abstract class SocketSelect
 
             }
         }
+        return [];
     }
 
 
     public static function sendOne($msg,$sign)
     {
         //socket_write(self::encode($msg),$sign);
-        socket_write($msg,$sign);
+        $no = socket_write($sign, $msg, strlen($msg));
+        //$nos = socket_send($sign,$msg,strlen($msg),0);
     }
 
     public static function sendMutily($msg,array $signs)
@@ -121,7 +123,7 @@ abstract class SocketSelect
         //$msg = self::encode($msg);
         foreach($signs as $r) {
             //socket_write(self::encode($msg),$r);
-            socket_write($msg,$r);
+            socket_write($r, $msg, strlen($msg));
         }
     }
 

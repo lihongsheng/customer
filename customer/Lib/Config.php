@@ -31,7 +31,7 @@ class Config
 
     const DbPassWord = '';
 
-    const RegisterIp = '0.0.0.0';
+    const RegisterIp = '127.0.0.1';
 
     const RegisterPort = '44540';
 
@@ -41,7 +41,7 @@ class Config
 
     const WorkIp    = '127.0.0.1';
 
-    const WorkPort  = '';
+    const WorkPort  = '46460';
 
     static $router = [
         'defaultModule' => 'web',

@@ -14,8 +14,9 @@ use customer\Lib\Config;
 use customer\Lib\PcntlModel;
 use customer\Lib\TextSocket;
 use customer\Lib\Timer;
+use Cli\Model\Event;
 
-class Register
+class Register extends Event
 {
     protected $pcntlModel;
     protected $getwayLink = [];
@@ -25,11 +26,7 @@ class Register
     protected $_links     = [];
     protected $master;
 
-    const LINK_TYPE_GETWAY = 'getway';
-    const LINK_TYPE_WORK   = 'work';
-    const LINK_TYPE_PING   = 'ping';
-    const EVENT_TYPE_LINK  = 'link';
-    const EVENT_TYPE_PING  = 'ping';
+
 
 
     public function __construct()

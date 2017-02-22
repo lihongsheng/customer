@@ -15,8 +15,9 @@ use customer\Lib\PcntlModel;
 use customer\Lib\TextSocket;
 use customer\Lib\WebSocket;
 use customer\Lib\Timer;
+use Cli\Model\Event;
 
-class Getway
+class Getway extends Event
 {
 
     protected $registerLink;
@@ -26,7 +27,6 @@ class Getway
     protected $getwayServer;
     private   $_links = [];
 
-    const LINK_TYPE_REGISTER = 'register';
 
     public function __construct()
     {
@@ -123,7 +123,7 @@ class Getway
             $msg = json_decode(TextSocket::decode($data['msg']),true);
             $this->onWorkMessage($key,$msg);
 
-        }else if($key == self::LINK_TYPE_REGISTER) {
+        } else if($key == self::LINK_TYPE_REGISTER) {
             $msg = json_decode(TextSocket::decode($data['msg']),true);
             $this->onRegisterMessage($key, $msg);
         }
@@ -131,10 +131,18 @@ class Getway
     }
 
 
-    public function onRegisterStart()
+    /**
+     * 链接到register服务的时候开始工作
+     * @param $key
+     */
+
+    public function onRegisterStart($key)
     {
 
     }
+
+
+
 
     public function onRegisterAccept($key)
     {
@@ -145,10 +153,14 @@ class Getway
             'port'     =>Config::WorkPort,
             'work'     =>[]
         ];
-        echo '[Getway] SEND '.'LINK '.$key.PHP_EOL;
+       // echo '[Getway] SEND '.'LINK '.$key.PHP_EOL;
         TextSocket::sendOne(TextSocket::encode(json_encode($msg)),$this->_links[$key]);
     }
+
+
+
     /**
+     * 接受到register服务发送过来的消息的时候的处理
      * @param $key
      * @param $msg
      */
@@ -160,28 +172,43 @@ class Getway
                 'eventType'=> Register::EVENT_TYPE_PING,
             ];
             TextSocket::sendOne(TextSocket::encode(json_encode($sendMsg)),$this->_links[$key]);
-            echo '[Getway] RegisterMessage '.$msg['linkType'].PHP_EOL;
+            //echo '[Getway] RegisterMessage '.$msg['linkType'].PHP_EOL;
         }
     }
 
+
+    /**
+     * register服务关闭时候处理
+     *
+     */
     public function onRegisterClose()
     {
 
     }
 
 
-
-    public function onWorkStart()
+    /**
+     * work服务初始化工作
+     * @pram string $key
+     * @return bool
+     */
+    public function onWorkStart($key)
     {
 
     }
 
+
+    /**
+     * 处理来之 work链接工作
+     * @param $key
+     */
     public function onWorkAccept($key)
     {
 
     }
 
     /**
+     * 处理来之work进程的消息
      * @param $key
      * @param $msg
      */
@@ -191,17 +218,28 @@ class Getway
     }
 
 
+    /**
+     * 工作进程关闭时候的处理
+     * @param $key
+     */
     public function onWorkClose($key)
     {
 
     }
 
-
+    /**
+     * getway启动工作
+     */
     public function onGetwayStart()
     {
 
     }
 
+
+    /**
+     * 接受来之浏览器或是其他客户端的链接工作
+     * @param $id
+     */
     public function onGetwayAccept($id)
     {
 
@@ -218,25 +256,38 @@ class Getway
     }
 
 
+    /**
+     * 处理getWay关闭工作
+     * @param $key
+     */
     public function onGetwayClose($key)
     {
 
     }
 
 
+    /**
+     * 保持与work进程心跳链接，及一段时间内无答复（断开链接的处理）
+     */
     public function pingWork()
     {
 
     }
 
+
+
+    /**
+     * 保持getway的心跳
+     */
     public function pingGetway()
     {
 
     }
 
 
+
     /**
-     * 保持心跳链接
+     * 保持与register的心跳链接
      */
     public function pingRegister()
     {
@@ -246,7 +297,7 @@ class Getway
             'work'     =>[]
         ];
         TextSocket::sendOne(TextSocket::encode(json_encode($msg)),$this->_links[self::LINK_TYPE_REGISTER]);
-        echo '[getway] PING '.PHP_EOL;
+        //echo '[getway] PING '.PHP_EOL;
     }
 
 }

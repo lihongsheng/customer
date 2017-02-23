@@ -26,11 +26,13 @@ class Work extends Event
     protected $getwayLinkData = [];
     private   $_links = [];
     private   $pcntlModel;
+    private   $userData;
 
 
     public function __construct()
     {
         $this->pcntlModel  = new PcntlModel(1);
+        $this->userData = UserDataCenter::Instance();
     }
 
 

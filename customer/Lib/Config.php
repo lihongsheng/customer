@@ -43,6 +43,11 @@ class Config
 
     const WorkPort  = '46460';
 
+
+    const RedisIp   = '127.0.0.1';
+    const RedisPort = '';
+    const RedisPwd  = '';
+
     static $router = [
         'defaultModule' => 'web',
         'defaultMethod' => 'index',

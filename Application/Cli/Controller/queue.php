@@ -1,54 +1,62 @@
 <?php
 /**
- * Queue.php
- * 对外队列提供统一接口（msg_queue,redis,MQ,mongo都可以实现队列）
+ * queue.php
+ *
  * 作者: Bright (dannyzml@qq.com)
- * 创建日期: 17/2/23 上午9:55
+ * 创建日期: 17/2/23 下午5:02
  * 修改记录:
  *
  * $Id$
  */
-namespace customer\Lib;
+namespace Cli\Controller;
 
-/**
- * （LINUX 下起作用）队列控制
- * Class MsgController
- */
 class Queue
 {
-    //相当于路由标示
     private  $msgId = '67000';
-    //获取的队列标示
     private  $msgKey;
 
     public function __construct()
     {
-        if(!function_exists('msg_send')) {
-            throw new \Exception("MSG_SEND NOT FIND");
+       /* if(!function_exists('msg_send')) {
+            throw new Exception("MSG_SEND NOT FIND");
         }
         if(!msg_queue_exists($this->msgId)){
             $this->msgKey = msg_get_queue($this->msgId);
         } else {
             $this->msgKey = msg_get_queue($this->msgId);
-            //throw new \Exception("QUEUE IS SET");
-        }
+            msg_remove_queue($this->msgKey);
+            $this->msgKey = msg_get_queue($this->msgId);
+            //throw new Exception("QUEUE IS SET");
+        }*/
     }
+
+
+
+
+    public function indexAction()
+    {
+        $this->msgKey = msg_get_queue($this->msgId);
+
+        $this->send(['ni'=>';;','kl'=>''],1);
+        $this->send(['ni'=>'00;','kl'=>'klkl'],2);
+        var_dump($this->get(2));
+        $this->close();
+    }
+
 
     /**
      * 发送队列
-     * @param array $msg
-     * @param int $tag
+     * @param $msg
      */
-    public function send($msg, $tag = 1) {
+    public function send($msg,$tag) {
         msg_send($this->msgKey, $tag, $msg,true);
     }
 
     /**
      * 取队列值
-     * @param int $tag
      * @return bool
      */
-    public function get($tag = 0) {
+    public function get($tag) {
         $data = msg_receive($this->msgKey, $tag, $msgType, 1024, $message);
         if($data) {
             return $message;

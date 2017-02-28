@@ -32,7 +32,7 @@ class Work extends Event
     public function __construct()
     {
         $this->pcntlModel  = new PcntlModel(1);
-        $this->userData = UserDataCenter::Instance();
+        //$this->userData = UserDataCenter::Instance();
     }
 
 
@@ -131,8 +131,10 @@ class Work extends Event
     public function onRegisterAccept($key)
     {
         $msg = [
-            'linkType' => self::LINK_TYPE_PING,
-            'eventType'=> self::EVENT_TYPE_PING,
+            'linkType' => self::LINK_TYPE_WORK,
+            'eventType'=> self::EVENT_TYPE_LINK,
+            'ip'=>'127.0.0.1',
+            'port'=>'0'
         ];
         // echo '[Getway] SEND '.'LINK '.$key.PHP_EOL;
         TextSocket::sendOne(TextSocket::encode(json_encode($msg)),$this->_links[$key]);
@@ -153,6 +155,7 @@ class Work extends Event
         }
 
         if($msg['linkType'] == self::LINK_TYPE_WORK) {
+            echo $msg['eventType'].PHP_EOL;
             if($msg['eventType'] == 'addGetWay') { //添加getway事件
                 foreach($msg['msgBody'] as $val) {
                     $id = md5($val['ip'],$val['port']);
@@ -162,6 +165,7 @@ class Work extends Event
 
                     $link = TextSocket::clientListen($val['ip'],$val['port']);
                     if($link) {
+                        echo "LINK GETWAY".PHP_EOL;
                         $this->_links[$id]     = $link;
                         $this->getwayLink[$id] = $link;
                         $this->getwayLinkData[$id] = $val;

@@ -27,6 +27,10 @@ abstract class Event
     const EVENT_TYPE_LINK  = 'link';
     //ping事件
     const EVENT_TYPE_PING  = 'ping';
+    //消息事件
+    const EVENT_TYPE_MSG   = 'msg';
+    //绑定用户UID事件
+    const EVENT_TYPE_BIND_UID = 'bind';
 
     //添加getway事件
     const EVENT_TYPE_ADD_GETWAY = 'addGetWay';

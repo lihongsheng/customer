@@ -16,6 +16,7 @@ use customer\Lib\TextSocket;
 use customer\Lib\WebSocket;
 use customer\Lib\Timer;
 use Cli\Model\Event;
+use customer\Lib\Queue;
 
 class Getway extends Event
 {
@@ -26,6 +27,14 @@ class Getway extends Event
     protected $getwayLink;
     protected $getwayServer;
     private   $_links = [];
+    private   $userMap = [];
+    private   $_PID = ''; //自身进程ID
+
+    const MSG_TYPE_GROUP = 1;//组消息，或是房间消息，或者群消息表示
+    const MSG_TYPE_ONLY  = 2;//单人消息
+    const MSG_TYPE_WORK  = 3;//发送到work进程的
+
+    private $queueModel;
 
 
     public function __construct()
@@ -34,7 +43,7 @@ class Getway extends Event
         $this->workServer = TextSocket::createAndListen(Config::WorkIp,Config::WorkPort);
         //创建getway端口
         $this->getwayServer = WebSocket::createAndListen(Config::GetwayIp,Config::GetwayPort);
-
+        $this->queueModel = new Queue();
         $this->_links['getS']     = $this->getwayServer;
         $this->_links['workS']    = $this->workServer;
         $this->beforeWork();
@@ -63,30 +72,30 @@ class Getway extends Event
             $this->onRegisterAccept(self::LINK_TYPE_REGISTER);
         }
 
-        Timer::init();
+        Timer::init(); //定时器初始化
         pcntl_signal_dispatch();
-        Timer::add(1,array($this,'pingRegister'));
+        Timer::add(1,array($this,'pingRegister')); //添加定时器任务
         while(true) {
-            pcntl_signal_dispatch();
-            //$link = $this->_links;
+            pcntl_signal_dispatch();//调用注册的信号回调函数
             $data = TextSocket::accept($this->_links,$server);
 
             switch($data['type']) {
                 case TextSocket::SOCKET_TYPE_ACCEPT://来之客户端的链接
                     $id = TextSocket::generateConnectionId();
-                    if($data['key'] == 'getS') { //来自getway的链接
+                    if($data['key'] == 'getS') { //来自getway的链接，前段websocket的链接
                         $this->_links[$id] = $data['link'];
                         $this->getwayLink[$id] = [
                             'link'      =>$data['link'],
                             'handshake' => false,
                         ];
                         $this->onGetwayAccept($id);
-                    } else if($data['key'] == 'workS'){
+                    } else if($data['key'] == 'workS'){ //来自work的链接，后期可以和gets链接的端口合并
                         $this->_links[$id] = $data['link'];
                         $this->worksLink[$id] = [
                             'link'      =>$data['link'],
                         ];
                         $this->onWorkAccept($id);
+                        echo "WORK LINK ".PHP_EOL;
                     }
                 case TextSocket::SOCKET_TYPE_READ: //消息
                     $this->linkType($data);
@@ -101,6 +110,7 @@ class Getway extends Event
         $this->onRegisterStart();
         $this->onGetwayStart();
         $this->onWorkStart();
+        $this->_PID = posix_getpid();
 
     }
 
@@ -147,8 +157,8 @@ class Getway extends Event
     public function onRegisterAccept($key)
     {
         $msg = [
-            'linkType' => Register::LINK_TYPE_GETWAY,
-            'eventType'=> Register::EVENT_TYPE_LINK,
+            'linkType' => self::LINK_TYPE_GETWAY,
+            'eventType'=> self::EVENT_TYPE_LINK,
             'ip'       =>Config::WorkIp,
             'port'     =>Config::WorkPort,
             'work'     =>[]
@@ -199,7 +209,7 @@ class Getway extends Event
 
 
     /**
-     * 处理来之 work链接工作
+     * 处理来之 work链接工作的初始化工作
      * @param $key
      */
     public function onWorkAccept($key)
@@ -208,16 +218,45 @@ class Getway extends Event
     }
 
     /**
-     * 处理来之work进程的消息
-     * @param $key
-     * @param $msg
+     * 处理来之work进程的消息，（work进程的处理可以放到master进程，子进程处理队列数据即可）
+     * @param string $key _links标示
+     * @param array $msg
+     * return void
      */
     public function onWorkMessage($key, $msg)
     {
-
+        //分析消息类型
+        if($msg['eventType'] == self::EVENT_TYPE_PING) { //ping事件
+            $this->pingWork($key);
+        } else if($msg['eventType'] ==self::EVENT_TYPE_MSG) {//消息事件
+            $this->msgTackle($msg['type'],$msg['uids'],$msg['body']);
+        }
     }
 
 
+    protected function msgTackle($type, $uids, $body)
+    {
+        foreach($uids as $k=>$val) {
+            if($this->userMap[$val]) {
+                WebSocket::sendOne(WebSocket::encode(json_encode(['type'=>$type,'body'=>$body])),$this->userMap[$val]);
+                unset($uids[$k]);
+            }
+        }
+        if(!empty($msg['uids'])) {
+            $this->queueModel->send(['type'=>$type, 'uids'=>$uids, 'body'=>$body]);
+        }
+    }
+
+
+    private function getQueueMsg()
+    {
+        $data = $this->queueModel->get();
+        if($data['type'] != self::MSG_TYPE_WORK) {
+            $this->msgTackle($data['type'],$data['uids'],$data['body']);
+        } else if($data['type'] == self::MSG_TYPE_WORK) {//
+            $this->msgToGetTackle($data['extend']['type'],$data['extend']['uids'],$data['extend']['body']);
+        }
+    }
     /**
      * 工作进程关闭时候的处理
      * @param $key
@@ -228,7 +267,7 @@ class Getway extends Event
     }
 
     /**
-     * getway启动工作
+     * getway启动工作时初始化工作
      */
     public function onGetwayStart()
     {
@@ -237,10 +276,10 @@ class Getway extends Event
 
 
     /**
-     * 接受来之浏览器或是其他客户端的链接工作
-     * @param $id
+     * 接受来之 浏览器或是其他客户端的链接工作时的触发工作
+     * @param $key
      */
-    public function onGetwayAccept($id)
+    public function onGetwayAccept($key)
     {
 
     }
@@ -252,7 +291,39 @@ class Getway extends Event
      */
     public function onGetwayMessage($key, $msg)
     {
+        //分析消息类型
+        if($msg['eventType'] == self::EVENT_TYPE_PING) { //ping事件
+            $this->pingGetway($key);
+        } else if($msg['eventType'] ==self::EVENT_TYPE_MSG) {//消息事件
+            $this->msgToGetTackle($msg['type'],$msg['uids'],$msg['body']);
+        }
+    }
 
+    /**
+     * 处理来自getway的客户端消息
+     * @param $type
+     * @param $uids
+     * @param $body
+     */
+    private function msgToGetTackle($type, $uids, $body)
+    {
+        foreach($uids as $k=>$val) {
+            if($this->userMap[$val]) {
+                WebSocket::sendOne(WebSocket::encode(json_encode(['type'=>$type,'body'=>$body])),$this->userMap[$val]);
+                unset($uids[$k]);
+            }
+        }
+        if(!empty($msg['uids'])) { //发送到work
+            if(!empty($this->worksLink)) {
+                foreach($this->worksLink as $k=>$val) {
+                    TextSocket::sendOne(TextSocket::encode(['type'=>$type, 'uids'=>$uids, 'body'=>$body]),$val);
+                    break;
+                }
+                //$this->queueModel->send(['type'=>$type, 'uids'=>$uids, 'body'=>$body]);
+            } else { //此进程没有work链接发送到队列让其他进程处理
+                $this->queueModel->send(['type'=>self::MSG_TYPE_WORK, 'extend'=>['uids'=>$uids, 'body'=>$body,'type'=>$type]]);
+            }
+        }
     }
 
 
@@ -268,10 +339,24 @@ class Getway extends Event
 
     /**
      * 保持与work进程心跳链接，及一段时间内无答复（断开链接的处理）
+     * @param string $key
+     * return void
      */
-    public function pingWork()
+    public function pingWork($key = '')
     {
-
+        $sendMsg = [
+            'linkType' => Register::LINK_TYPE_PING,
+            'eventType'=> Register::EVENT_TYPE_PING,
+        ];
+        if($key){
+            TextSocket::sendOne(TextSocket::encode(json_encode($sendMsg)),$this->_links[$key]);
+        } else {
+            if(!empty($this->worksLink)) {
+                foreach($this->worksLink as $val) {
+                    TextSocket::sendOne(TextSocket::encode(json_encode($sendMsg)),$val);
+                }
+            }
+        }
     }
 
 
@@ -279,9 +364,21 @@ class Getway extends Event
     /**
      * 保持getway的心跳
      */
-    public function pingGetway()
+    public function pingGetway($key)
     {
-
+        $sendMsg = [
+            'linkType' => Register::LINK_TYPE_PING,
+            'eventType'=> Register::EVENT_TYPE_PING,
+        ];
+        if($key){
+            WebSocket::sendOne(WebSocket::encode(json_encode($sendMsg)),$this->_links[$key]);
+        } else {
+            if(!empty($this->getwayLink)) {
+                foreach ($this->getwayLink as $val) {
+                    WebSocket::sendOne(WebSocket::encode(json_encode($sendMsg)), $val['link']);
+                }
+            }
+        }
     }
 
 

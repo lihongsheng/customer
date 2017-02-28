@@ -73,9 +73,9 @@ class Register extends Event
     {
         $msg = json_decode(TextSocket::decode($data['msg']),true);
         switch($msg['linkType']){
-            case Register::LINK_TYPE_GETWAY://来之getway服务器
-
-                if($msg['eventType'==Register::EVENT_TYPE_LINK]) {//link事件
+            case self::LINK_TYPE_GETWAY://来之getway服务器
+                if($msg['eventType'] == self::EVENT_TYPE_LINK) {//link事件
+                    echo '[getway] '.' LINK '.$msg['ip'].PHP_EOL;
                     $id = $data['key'];
                     $this->getwayLink[$id] = $this->_links[$id];
                     //if(FALSE === array_search($data['link'],$this->getwayLinkData)) {
@@ -89,12 +89,10 @@ class Register extends Event
                         echo '[Register] '.' LINK '.$msg['ip'].PHP_EOL;
                         //向work发送新新增加的getway
                         if(!empty($this->workLink)) {
-                            foreach($this->getwayLinkData as $val) {
-                                $tmp[] = [
-                                    'ip'   => $val['ip'],
-                                    'port' => $val['port']
-                                ];
-                            }
+                            $tmp[] = [
+                                'ip'   => $msg['ip'],
+                                'port' => $msg['port']
+                            ];
                             $msg = json_encode(['msgBody'=>$tmp,'linkType'=>self::LINK_TYPE_WORK,'eventType'=>'addGetWay']);
                             unset($tmp);
                             TextSocket::sendMutily(TextSocket::encode($msg),$this->workLink);
@@ -103,8 +101,8 @@ class Register extends Event
                 }
             break;
             case self::LINK_TYPE_WORK: //来之客户端的链接
-
-                if($msg['eventType'==Register::EVENT_TYPE_LINK]) {//link事件
+                var_dump($this->getwayLinkData);
+                if($msg['eventType'] ==Register::EVENT_TYPE_LINK) {//link事件
                     $id = $data['key'];
                     $this->workLink[$id] = $this->_links[$id];
                     //if(FALSE === array_search($data['link'],$this->workLinkData)) {
@@ -113,19 +111,21 @@ class Register extends Event
                             'ip' => $msg['ip'],
                             'port' => $msg['port'],
                         ];
-                        if(!empty($this->getwayLinkData)) {
-                            foreach($this->getwayLinkData as $val) {
-                                $tmp[] = [
-                                    'ip'   => $val['ip'],
-                                    'port' => $val['port']
-                                ];
-                            }
-                            $msg = json_encode(['msgBody'=>$tmp,'linkType'=>'work','eventType'=>'addWork']);
-                            unset($tmp);
-                            //发送给当前链接的work所有的getway信息
-                            //TextSocket::sendMutily(TextSocket::encode($msg),$this->getwayLink);
-                            TextSocket::sendOne(TextSocket::encode($msg),$this->_links[$id]);
+
+                    }
+                    if(!empty($this->getwayLinkData)) {
+                        foreach($this->getwayLinkData as $val) {
+                            $tmp[] = [
+                                'ip'   => $val['ip'],
+                                'port' => $val['port']
+                            ];
                         }
+                        $msg = json_encode(['msgBody'=>$tmp,'linkType'=>self::LINK_TYPE_WORK,'eventType'=>'addGetWay']);
+                        unset($tmp);
+                        //发送给当前链接的work所有的getway信息
+                        //TextSocket::sendMutily(TextSocket::encode($msg),$this->getwayLink);
+                        echo "SEND GETWAY IP".PHP_EOL;
+                        TextSocket::sendOne(TextSocket::encode($msg),$this->_links[$id]);
                     }
                 }
             break;
@@ -140,7 +140,7 @@ class Register extends Event
                 if($this->workLinkData[$id]) {
                     $this->workLinkData[$id]['ping'] = $nowTime;
                 }
-                echo '[Register] '." GET PING ".PHP_EOL;
+                //echo '[Register] '." GET PING ".PHP_EOL;
         }
     }
 
@@ -150,15 +150,14 @@ class Register extends Event
      */
     public function ping()
     {
-        echo 'PING '.PHP_EOL;
+
         if(!empty($this->_links)){
             foreach($this->_links as $val){
                 if($val == $this->master)  {
                     continue;
                 }
-
                 TextSocket::sendOne(TextSocket::encode(json_encode(['linkType'=>self::LINK_TYPE_PING,'eventType'=>self::EVENT_TYPE_PING,'msgBody'=>[]])),$val);
-                echo "[Reigster] PING ".PHP_EOL;
+                //echo "[Reigster] PING ".PHP_EOL;
             }
         }
     }

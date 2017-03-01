@@ -255,14 +255,14 @@ class Getway extends Event
 
     private function getQueueMsg()
     {
-        $data = $this->queueModel->get();
-        if($data) {
-            if($data['type'] != self::MSG_TYPE_WORK) {
-                $this->msgTackle($data['type'],$data['uids'],$data['body']);
-            } else if($data['type'] == self::EVENT_TYPE_MSG) {//
-                $this->msgToGetTackle($data['extend']['type'],$data['extend']['uids'],$data['extend']['body']);
+        $queueData = $this->queueModel->get();
+        if($queueData) {
+            if($queueData['type'] != self::MSG_TYPE_WORK) {
+                $this->msgTackle($queueData['type'],$queueData['uids'],$queueData['body']);
+            } else if($queueData['type'] == self::EVENT_TYPE_MSG) {//
+                $this->msgToGetTackle($queueData['extend']['type'],$queueData['extend']['uids'],$queueData['extend']['body']);
             }
-            echo 'QUEUE DATA NO EMPTY '.json_encode($data).$this->_PID.PHP_EOL;
+            echo 'QUEUE DATA NO EMPTY '.json_encode($queueData).$this->_PID.PHP_EOL;
         }
         echo "GET QUEUE".$this->_PID.PHP_EOL;
         return;

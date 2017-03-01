@@ -95,6 +95,15 @@ class Work extends Event
 
         if($msg['linkType'] == self::LINK_TYPE_WORK) { //来自个getway的工作消息
             //$msg['eventType'] 根据事件处理
+            if($msg['eventType'] == self::EVENT_TYPE_MSG) {
+                TextSocket::sendOne(TextSocket::encode(json_encode([
+                    'eventType'=>self::EVENT_TYPE_MSG,
+                    'linkType'=>self::LINK_TYPE_WORK,
+                    'uids'=>$msg['uids'],
+                    'body'=>$msg['body']
+                ])),$this->_links[$key]);
+                echo "SEND GETWAY ".PHP_EOL;
+            }
         }
 
 

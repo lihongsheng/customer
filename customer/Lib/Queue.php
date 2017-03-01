@@ -17,7 +17,7 @@ namespace customer\Lib;
 class Queue
 {
     //相当于路由标示
-    private  $msgId = '67000';
+    private  $msgId = '69000';
     //获取的队列标示
     private  $msgKey;
 
@@ -26,12 +26,15 @@ class Queue
         if(!function_exists('msg_send')) {
             throw new \Exception("MSG_SEND NOT FIND");
         }
-        if(!msg_queue_exists($this->msgId)){
+        $this->msgKey = msg_get_queue($this->msgId);
+        /*if(!msg_queue_exists($this->msgId)){
             $this->msgKey = msg_get_queue($this->msgId);
         } else {
             $this->msgKey = msg_get_queue($this->msgId);
+            msg_remove_queue($this->msgKey);
+            $this->msgKey = msg_get_queue($this->msgId);
             //throw new \Exception("QUEUE IS SET");
-        }
+        }*/
     }
 
     /**

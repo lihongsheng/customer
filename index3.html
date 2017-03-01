@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>websocket_TEST</title>
+</head>
+<body>
+<!--
+SOCKET流程：
+1：服务器端开启端口等待客户端建立TCP连接
+2：客户端建立TCP四次握手协议TCP连接 （TCP的四次握手连接全部被封装好的代码处理）
+
+
+3: 客户端发起WS协议
+4：服务器判断 客户端发送消息内容即是WS协议请求
+5：服务器端返回WS连接协议
+
+
+6：双方建立WS长连接
+7：此时客户端可以接受服务器推送过来的内容（接受WS加密内容），也可以向服务器端发送内容(服务端解码WS加密内容)。
+
+双方关闭SOCKET
+
+-->
+
+
+
+<textarea class="log" style="width: 100%; height: 500px;">
+=======websocket======
+</textarea>
+<input type="button" value="连接" onClick="link()">
+<input type="button" value="断开" onClick="dis()">
+<input type="text" id="text">
+<input type="button" value="发送" onClick="send()">
+<script type="text/javascript" src="/Public/js/jquery.min.js"></script>
+<script>
+    function link(){
+        var url='ws://127.0.0.1:46560';
+        socket=new WebSocket(url);
+        socket.onopen=function(){
+            var tmp = {
+                'eventType':'bind',
+                'linkType':'link',
+                'uid':'13'
+            };
+            socket.send(JSON.stringify(tmp));
+
+            log('连接成功');
+        }
+
+        socket.onmessage=function(msg) {
+            log('获得消息:'+msg.data);
+            console.log(msg);
+        }
+
+        socket.onclose=function(){log('断开连接')}
+    }
+
+    function dis(){
+        socket.close();
+        socket=null;
+    }
+
+
+    function log(var1){
+        $('.log').append(var1+"\r\n");
+    }
+
+
+    function send(){
+        var text = $('#text').val();
+        var tmp = {
+            'eventType':'msg',
+            'linkType':'link',
+            'uids':['12'],
+            'body':text
+        };
+        socket.send(JSON.stringify(tmp));
+    }
+
+</script>
+</body>
+</html>

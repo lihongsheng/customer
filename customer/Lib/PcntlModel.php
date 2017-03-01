@@ -47,7 +47,7 @@ class PcntlModel
      * 是否守护进程
      * @var bool
      */
-    private $Daemonize = false;
+    private $Daemonize = true;
 
     /**最多开启的工作进程数
      * @var int
@@ -88,7 +88,7 @@ class PcntlModel
      * 重定向输出的文件
      * @var string
      */
-    protected $StdoutFile = '/dev/null';
+    protected $StdoutFile = '/tmp/pcntl.log';
 
 
     /**

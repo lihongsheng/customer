@@ -15,7 +15,7 @@ class Config
     //最大进程数量
     const MaxSize   = 4;
     //是否转换为守护进程
-    const Daemonize = false;
+    const Daemonize = true;
 
     //数据库驱动
     const DbDrive = 'pdo';

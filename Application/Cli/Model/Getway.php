@@ -12,6 +12,7 @@ namespace Cli\Model;
 
 use customer\Lib\Config;
 use customer\Lib\PcntlModel;
+use customer\Lib\RedisQueue;
 use customer\Lib\TextSocket;
 use customer\Lib\WebSocket;
 use customer\Lib\Timer;
@@ -43,7 +44,7 @@ class Getway extends Event
         $this->workServer = TextSocket::createAndListen(Config::WorkIp,Config::WorkPort);
         //创建getway端口
         $this->getwayServer = WebSocket::createAndListen(Config::GetwayIp,Config::GetwayPort);
-        $this->queueModel = new Queue();
+        $this->queueModel = new RedisQueue();
         $this->_links['getS']     = $this->getwayServer;
         $this->_links['workS']    = $this->workServer;
         $this->beforeWork();

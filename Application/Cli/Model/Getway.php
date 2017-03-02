@@ -122,9 +122,10 @@ class Getway extends Event
     protected function linkType($data)
     {
         $key = $data['key'];
+        //echo "::KEY MSG::: ".$key.':::'.$this->_PID.PHP_EOL;
         if($this->getwayLink[$key]) {
             //$msg = json_decode(WebSocket::decode($data['msg']),true);
-            echo "READ getWAY MEG".PHP_EOL;
+            //echo "READ getWAY MEG".PHP_EOL;
             if(!$this->getwayLink[$key]['handshake']) {
                 $handshake = WebSocket::handshake($data['msg']);
                 WebSocket::sendOne($handshake,$this->_links[$key]);
@@ -244,12 +245,13 @@ class Getway extends Event
     {
         foreach($uids as $k=>$val) {
             if($this->userMap[$val]) {
-                WebSocket::sendOne(WebSocket::encode(json_encode(['type'=>$type,'body'=>$body])),$this->userMap[$val]);
+                WebSocket::sendOne(WebSocket::encode(json_encode(['eventType'=>$type,'body'=>$body])),$this->userMap[$val]);
                 unset($uids[$k]);
             }
         }
         if(!empty($msg['uids'])) {
-            $this->queueModel->send(['type'=>$type, 'uids'=>$uids, 'body'=>$body]);
+            // $this->queueModel->send(['eventType'=>self::MSG_TYPE_WORK, 'extend'=>['uids'=>$uids, 'body'=>$body,'eventType'=>$type]]);
+            $this->queueModel->send(['eventType'=>self::EVENT_TYPE_MSG,'extend'=>['type'=>$type, 'uids'=>$uids, 'body'=>$body]]);
         }
     }
 
@@ -258,14 +260,14 @@ class Getway extends Event
     {
         $queueData = $this->queueModel->get();
         if($queueData) {
-            if($queueData['type'] != self::MSG_TYPE_WORK) {
-                $this->msgTackle($queueData['type'],$queueData['uids'],$queueData['body']);
-            } else if($queueData['type'] == self::EVENT_TYPE_MSG) {//
-                $this->msgToGetTackle($queueData['extend']['type'],$queueData['extend']['uids'],$queueData['extend']['body']);
+            if($queueData['eventType'] != self::MSG_TYPE_WORK) {
+                $this->msgTackle($queueData['extend']['eventType'],$queueData['extend']['uids'],$queueData['extend']['body']);
+            } else if($queueData['eventType'] == self::EVENT_TYPE_MSG) {//
+                $this->msgToGetTackle($queueData['extend']['eventType'],$queueData['extend']['uids'],$queueData['extend']['body']);
             }
             echo 'QUEUE DATA NO EMPTY '.json_encode($queueData).$this->_PID.PHP_EOL;
         }
-        echo "GET QUEUE".$this->_PID.PHP_EOL;
+        //echo "GET QUEUE".$this->_PID.PHP_EOL;
         return;
     }
     /**
@@ -306,7 +308,7 @@ class Getway extends Event
         if($msg['eventType'] == self::EVENT_TYPE_PING) { //ping事件
             $this->pingGetway($key);
         } else if($msg['eventType'] ==self::EVENT_TYPE_MSG) {//消息事件
-            $this->msgToGetTackle($msg['type'],$msg['uids'],$msg['body']);
+            $this->msgToGetTackle($msg['eventType'],$msg['uids'],$msg['body']);
         } else if($msg['eventType'] ==self::EVENT_TYPE_BIND_UID) { //绑定UID事件
             $this->userMap[$msg['uid']] = $this->_links[$key];
 
@@ -323,20 +325,20 @@ class Getway extends Event
     {
         foreach($uids as $k=>$val) {
             if($this->userMap[$val]) {
-                WebSocket::sendOne(WebSocket::encode(json_encode(['type'=>$type,'pid'=>$this->_PID,'body'=>$body])),$this->userMap[$val]);
+                WebSocket::sendOne(WebSocket::encode(json_encode(['eventType'=>$type,'pid'=>$this->_PID,'body'=>$body])),$this->userMap[$val]);
                 unset($uids[$k]);
             }
         }
-        if(!empty($msg['uids'])) { //发送到work
+        if(!empty($uids)) { //发送到work
             if(!empty($this->worksLink)) {
                 foreach($this->worksLink as $k=>$val) {
-                    TextSocket::sendOne(TextSocket::encode(['type'=>$type, 'uids'=>$uids, 'body'=>$body]),$val);
+                    TextSocket::sendOne(TextSocket::encode(['eventType'=>$type, 'uids'=>$uids, 'body'=>$body]),$val);
                     echo "SEND WORK";
                     break;
                 }
                 //$this->queueModel->send(['type'=>$type, 'uids'=>$uids, 'body'=>$body]);
             } else { //此进程没有work链接发送到队列让其他进程处理
-                $this->queueModel->send(['type'=>self::MSG_TYPE_WORK, 'extend'=>['uids'=>$uids, 'body'=>$body,'type'=>$type]]);
+                $this->queueModel->send(['eventType'=>self::MSG_TYPE_WORK, 'extend'=>['uids'=>$uids, 'body'=>$body,'eventType'=>$type]]);
             }
         }
     }

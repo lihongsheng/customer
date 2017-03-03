@@ -102,7 +102,7 @@ class Work extends Event
                     'uids'=>$msg['uids'],
                     'body'=>$msg['body']
                 ])),$this->_links[$key]);
-                echo "SEND GETWAY ".PHP_EOL;
+                echo "SEND GETWAY MSG ".PHP_EOL;
             }
         }
 

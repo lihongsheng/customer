@@ -39,7 +39,7 @@ class RedisQueue
      */
     public function get($tag = 1) {
         //$data = msg_receive($this->msgKey, $tag, $msgType, 1024, $message);
-        $data = $this->model->lPush($this->key.$tag);
+        $data = $this->model->lPop($this->key.$tag);
         if($data) {
             return json_decode($data,true);
         }

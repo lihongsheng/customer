@@ -44,7 +44,7 @@ class Getway extends Event
         $this->workServer = TextSocket::createAndListen(Config::WorkIp,Config::WorkPort);
         //创建getway端口
         $this->getwayServer = WebSocket::createAndListen(Config::GetwayIp,Config::GetwayPort);
-        $this->queueModel = new RedisQueue();
+
         $this->_links['getS']     = $this->getwayServer;
         $this->_links['workS']    = $this->workServer;
         $this->beforeWork();
@@ -62,6 +62,7 @@ class Getway extends Event
 
     public function work()
     {
+        $this->queueModel = new RedisQueue();
         $this->_PID = posix_getpid();
         //链接register
         $registerIp = Config::RegisterIp == '0.0.0.0' ? '127.0.0.1' : Config::RegisterIp;
@@ -235,22 +236,29 @@ class Getway extends Event
         //分析消息类型
         if($msg['eventType'] == self::EVENT_TYPE_PING) { //ping事件
             $this->pingWork($key);
-        } else if($msg['eventType'] ==self::EVENT_TYPE_MSG) {//消息事件
-            $this->msgTackle($msg['type'],$msg['uids'],$msg['body']);
+        } else if($msg['eventType'] ==self::EVENT_TYPE_MSG) {//获得work发送过来的消息处理事件
+            echo "GET WORK MSG".$this->_PID.PHP_EOL;
+            $this->msgTackle($msg['eventType'],$msg['uids'],$msg['body']);
         }
     }
 
-
+    /**
+     * 处理来自发送sendwork事件
+     * @param $type
+     * @param $uids
+     * @param $body
+     */
     protected function msgTackle($type, $uids, $body)
     {
-        foreach($uids as $k=>$val) {
+        foreach($uids as $k=>$val) { //检测此用户是否存在于自己的进程中
             if($this->userMap[$val]) {
-                WebSocket::sendOne(WebSocket::encode(json_encode(['eventType'=>$type,'body'=>$body])),$this->userMap[$val]);
+                WebSocket::sendOne(WebSocket::encode(json_encode(['eventType'=>$type,'pid'=>$this->_PID,'body'=>$body])),$this->userMap[$val]);
                 unset($uids[$k]);
             }
         }
         if(!empty($msg['uids'])) {
             // $this->queueModel->send(['eventType'=>self::MSG_TYPE_WORK, 'extend'=>['uids'=>$uids, 'body'=>$body,'eventType'=>$type]]);
+            echo "SEND msgTackle".PHP_EOL;
             $this->queueModel->send(['eventType'=>self::EVENT_TYPE_MSG,'extend'=>['type'=>$type, 'uids'=>$uids, 'body'=>$body]]);
         }
     }
@@ -260,7 +268,7 @@ class Getway extends Event
     {
         $queueData = $this->queueModel->get();
         if($queueData) {
-            if($queueData['eventType'] != self::MSG_TYPE_WORK) {
+            if($queueData['eventType'] == self::EVENT_TYPE_SEND_WORK) {
                 $this->msgTackle($queueData['extend']['eventType'],$queueData['extend']['uids'],$queueData['extend']['body']);
             } else if($queueData['eventType'] == self::EVENT_TYPE_MSG) {//
                 $this->msgToGetTackle($queueData['extend']['eventType'],$queueData['extend']['uids'],$queueData['extend']['body']);
@@ -308,6 +316,7 @@ class Getway extends Event
         if($msg['eventType'] == self::EVENT_TYPE_PING) { //ping事件
             $this->pingGetway($key);
         } else if($msg['eventType'] ==self::EVENT_TYPE_MSG) {//消息事件
+            //处理消息时事件
             $this->msgToGetTackle($msg['eventType'],$msg['uids'],$msg['body']);
         } else if($msg['eventType'] ==self::EVENT_TYPE_BIND_UID) { //绑定UID事件
             $this->userMap[$msg['uid']] = $this->_links[$key];
@@ -317,28 +326,30 @@ class Getway extends Event
 
     /**
      * 处理来自getway的客户端消息
-     * @param $type
-     * @param $uids
-     * @param $body
+     * @param $type 消息类型eventType事件类型
+     * @param $uids to用户
+     * @param $body 消息内容
      */
     private function msgToGetTackle($type, $uids, $body)
     {
         foreach($uids as $k=>$val) {
-            if($this->userMap[$val]) {
+            if($this->userMap[$val]) { //如果进程中存在此用户，在此进程中处理这条消息
                 WebSocket::sendOne(WebSocket::encode(json_encode(['eventType'=>$type,'pid'=>$this->_PID,'body'=>$body])),$this->userMap[$val]);
                 unset($uids[$k]);
             }
         }
-        if(!empty($uids)) { //发送到work
-            if(!empty($this->worksLink)) {
+        if(!empty($uids)) { //用户不在此进程发送到work
+            if(!empty($this->worksLink)) { //如果此进程存在work长链接发送给work处理
                 foreach($this->worksLink as $k=>$val) {
-                    TextSocket::sendOne(TextSocket::encode(['eventType'=>$type, 'uids'=>$uids, 'body'=>$body]),$val);
-                    echo "SEND WORK";
+                    //$msg['linkType'] == self::LINK_TYPE_WORK
+                    TextSocket::sendOne(TextSocket::encode(['linkType'=>self::LINK_TYPE_WORK,'eventType'=>self::EVENT_TYPE_MSG, 'uids'=>$uids, 'body'=>$body]),$val);
+                    echo "SEND MSG TO WORK".PHP_EOL;
                     break;
                 }
-                //$this->queueModel->send(['type'=>$type, 'uids'=>$uids, 'body'=>$body]);
-            } else { //此进程没有work链接发送到队列让其他进程处理
-                $this->queueModel->send(['eventType'=>self::MSG_TYPE_WORK, 'extend'=>['uids'=>$uids, 'body'=>$body,'eventType'=>$type]]);
+
+            } else {
+                //此进程没有work链接发送到队列让其他进程处理
+                $this->queueModel->send(['eventType'=>self::EVENT_TYPE_SEND_WORK, 'extend'=>['uids'=>$uids, 'body'=>$body,'eventType'=>$type]]);
             }
         }
     }

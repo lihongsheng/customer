@@ -111,6 +111,10 @@ abstract class SocketSelect
     }
 
 
+    public static function stop(){
+
+    }
+
     public static function sendOne($msg,$sign)
     {
         //socket_write(self::encode($msg),$sign);

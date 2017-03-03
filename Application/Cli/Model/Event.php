@@ -31,6 +31,8 @@ abstract class Event
     const EVENT_TYPE_MSG   = 'msg';
     //绑定用户UID事件
     const EVENT_TYPE_BIND_UID = 'bind';
+    //发送给work的标示
+    const EVENT_TYPE_SEND_WORK = 'sendwork';
 
     //添加getway事件
     const EVENT_TYPE_ADD_GETWAY = 'addGetWay';

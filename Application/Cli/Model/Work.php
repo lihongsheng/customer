@@ -74,6 +74,7 @@ class Work extends Event
                     if($data['key'] == self::LINK_TYPE_REGISTER) {//来自register的消息回复
                         $this->onRegisterMessage($data['key'],json_decode(TextSocket::decode($data['msg']),true));
                     } else {
+
                         $this->onGetwayMessage($data['key'],json_decode(TextSocket::decode($data['msg']),true));
                     }
             }
@@ -88,11 +89,12 @@ class Work extends Event
      */
     public function onGetwayMessage($key, $msg)
     {
+
         if($msg['linkType'] == self::LINK_TYPE_PING) {
             $this->pingGetway($key);
             return;
         }
-
+        echo "[work]::GET GETWAY MSG ".$key.json_encode($msg).PHP_EOL;
         if($msg['linkType'] == self::LINK_TYPE_WORK) { //来自个getway的工作消息
             //$msg['eventType'] 根据事件处理
             if($msg['eventType'] == self::EVENT_TYPE_MSG) {
@@ -102,7 +104,6 @@ class Work extends Event
                     'uids'=>$msg['uids'],
                     'body'=>$msg['body']
                 ])),$this->_links[$key]);
-                echo "SEND GETWAY MSG ".PHP_EOL;
             }
         }
 
@@ -167,15 +168,16 @@ class Work extends Event
             echo $msg['eventType'].PHP_EOL;
             if($msg['eventType'] == 'addGetWay') { //添加getway事件
                 foreach($msg['msgBody'] as $val) {
-                    $id = md5($val['ip'],$val['port']);
+                    $id = md5($val['ip'].$val['port']);
                     if($this->getwayLink[$id]) {
                         continue;
                     }
 
                     $link = TextSocket::clientListen($val['ip'],$val['port']);
                     if($link) {
-                        echo "LINK GETWAY".PHP_EOL;
+                        echo "LINK----".$id."---GETWAY".PHP_EOL;
                         $this->_links[$id]     = $link;
+                        //var_dump($this->_links);
                         $this->getwayLink[$id] = $link;
                         $this->getwayLinkData[$id] = $val;
                         $this->onGetwayAccept($id);

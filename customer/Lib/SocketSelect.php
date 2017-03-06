@@ -18,7 +18,7 @@ abstract class SocketSelect
     private $_connectValues = array();
     private $_registerLink = array();
     private $_workLink    = array();
-    private static $_connectionIdRecorder;
+    private static $_connectionIdRecorder = 0;
 
 
     const SOCKET_TYPE_ACCEPT = 1;
@@ -119,6 +119,7 @@ abstract class SocketSelect
     {
         //socket_write(self::encode($msg),$sign);
         $no = socket_write($sign, $msg, strlen($msg));
+        return $no;
         //$nos = socket_send($sign,$msg,strlen($msg),0);
     }
 

@@ -11,6 +11,8 @@
 
 namespace customer\Lib;
 
+use Cli\Model\Event;
+
 abstract class SocketSelect
 {
 
@@ -20,10 +22,21 @@ abstract class SocketSelect
     private $_workLink    = array();
     private static $_connectionIdRecorder = 0;
 
+    protected $_ClientLinks = [];  //客服端的链接
+    protected $_uidLinks     = []; //uid与客服端绑定
 
     const SOCKET_TYPE_ACCEPT = 1;
     const SOCKET_TYPE_READ   = 2;
     const SOCKET_TYPE_CLOSE  = 3;
+
+    protected $_links = [];
+
+    protected  $event;
+    protected $handle = false;
+
+    public function setEvent(Event $event) {
+        self::$event = $event;
+    }
 
     //创建
     //protected static $listen;
@@ -31,49 +44,34 @@ abstract class SocketSelect
     //protected static $clientListen = array();
 
 //为work创建并监听 端口
-    public static function createAndListen($ip, $port)
+    public function createAndListen($ip, $port)
     {
         $listen = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);
         socket_bind($listen, $ip, $port);
         socket_listen($listen);
-        return $listen;
+        $this->_links["server"] = $listen;
     }
 
 
-    public static function clientListen($ip,$port)
+    public function clientListen($ip,$port)
     {
         $listen = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         if(!socket_connect($listen,$ip,$port)) {
             $errorId = socket_last_error($listen);
             throw new \Exception("NET ERROR ".socket_strerror($errorId));
         }
-        return $listen;
+        $this->_links["client"] = $listen;
     }
 
-    /**
-     * 获取fd
-     * @return mixed
-     */
-    /*public static function getListen()
-    {
-        return self::$listen;
-    }*/
 
-    /*public static function getClientListen()
-     {
-         return self::$clientListen;
-     }*/
 
     /**
-     * @param $acceptLink
-     * @param $server
-     * @return array
      * @throws \Exception
      */
-    public static function accept(& $acceptLink,& $server)
+    public function accept()//& $acceptLink,& $server
     {
-        $links = $acceptLink;
+        $links = $this->_links;
 
         $intLinks = socket_select($links,$write=null,$except=null,0);//无阻赛运行
         if($intLinks === false) {
@@ -85,63 +83,77 @@ abstract class SocketSelect
         $buffer = '';
 
         foreach($links as $k=>$r){
-            if(in_array($r,$server)) {//有新的链接进来
-                return ['link'=>socket_accept($r),
+            //if(in_array($r,$server)) {
+            if($r === $this->_links['server']) {
+                //有新的链接进来
+                /*return ['link'=>socket_accept($r),
                     'type'=>self::SOCKET_TYPE_ACCEPT,
                     'key'=>array_search($r,$server),
-                    'msg'=>''];
+                    'msg'=>''];*/
+                //$id = self::generateConnectionId();
+                $eventLink = socket_accept($r);
+                $id = (int)$eventLink;
+                $this->_ClientLinks[$id] = [
+                    'fd'    =>$eventLink,
+                    'handle'=>false,
+                    'uid'   => ''
+                ];
+                $this->_links[$id] = $eventLink;
+
+                $this->event->onConnect($id,'');
             } else {
                 $data = socket_recv($r,$buffer ,2048,0);
+                $id = (int)$r;
                 if($data < 7) {
-                    self::stop($r);
-                    return ['link'=>$r,
-                        'type'=>self::SOCKET_TYPE_CLOSE,
-                        'key'=>$k,
-                        'msg'=>''];
+                    $this->delLinks($id);
+                    $this->event->onClose($id);
+                } else {
+                    if($this->handle && !$this->_ClientLinks['handle']) {
+                        $this->handshake($data);
+                    } else {
+                        $data = $this->decode($data);
+                        $this->ecent->onMessage($data,$id);
+                    }
                 }
-
-                return ['link'=>$r,
-                    'type'=>self::SOCKET_TYPE_READ,
-                    'key'=>$k,
-                    'msg'=>$buffer];
 
             }
         }
-        return [];
-    }
-
-
-    public static function stop(){
 
     }
 
-    public static function sendOne($msg,$sign)
+
+    protected function delLinks($id){
+        socket_close($this->_links[$id]);
+        unset($this->_ClientLinks[$id]);
+        unset($this->_links[$id]);
+    }
+
+    public function sendOne($msg,$id)
     {
-        //socket_write(self::encode($msg),$sign);
-        $no = socket_write($sign, $msg, strlen($msg));
+        $sign = $this->_links[$id];
+        $msg  = $this->encode($msg);
+        $no   = socket_write($sign, $msg, strlen($msg));
         return $no;
         //$nos = socket_send($sign,$msg,strlen($msg),0);
     }
 
-    public static function sendMutily($msg,array $signs)
+    public function sendMutily($msg,array $ids)
     {
-        //$msg = self::encode($msg);
-        foreach($signs as $r) {
-            //socket_write(self::encode($msg),$r);
-            socket_write($r, $msg, strlen($msg));
+        foreach($ids as $r) {
+            $this->sendOne($msg,$r);
         }
     }
 
-    public static function close($sign)
+    public function close($id)
     {
-        socket_close($sign);
+        $this->delLinks($id);
     }
 
     /**
      * 生成connection id
      * @return int
      */
-    public function generateConnectionId()
+    public static function generateConnectionId()
     {
         $max_unsigned_int = 4294967295;
         if (self::$_connectionIdRecorder >= $max_unsigned_int) {
@@ -151,9 +163,9 @@ abstract class SocketSelect
         return $id;
     }
 
-    abstract public static function encode($msg);
-    abstract public static function decode($buffer);
-    abstract public static function handshake($buffer);
+    abstract public function encode($msg);
+    abstract public function decode($buffer);
+    abstract public function handshake($buffer);
 
 
 }

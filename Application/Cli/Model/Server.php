@@ -26,9 +26,6 @@ class Server extends Event
 
     public function __construct()
     {
-
-        $this->ser = new WebSocket();
-        $this->ser->setEvent($this);
         $this->beforeWork();
         $this->pcntlModel  = new PcntlModel(1);
     }
@@ -42,6 +39,8 @@ class Server extends Event
     public function work()
     {
         $this->_PID = posix_getpid();
+        $this->ser = new WebSocket();
+        $this->ser->setEvent($this);
         $this->ser->createAndListen('127.0.0.1','9701');
         while(true) {
             $this->ser->accept();

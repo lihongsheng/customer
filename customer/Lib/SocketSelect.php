@@ -84,7 +84,7 @@ abstract class SocketSelect
 
         foreach($links as $k=>$r){
             //if(in_array($r,$server)) {
-            if($r === $this->_links['server']) {
+            if($r == $this->_links['server']) {
                 $eventLink = socket_accept($r);
                 $id = (int)$eventLink;
                 $this->_ClientLinks[$id] = [
@@ -95,6 +95,7 @@ abstract class SocketSelect
                 $this->_links[$id] = $eventLink;
 
                 $this->event->onConnect($id,'');
+                echo " LINKE".PHP_EOL;
             } else {
                 $data = socket_recv($r,$buffer ,2048,0);
                 $id = (int)$r;
@@ -102,9 +103,11 @@ abstract class SocketSelect
                     $this->delLinks($id);
                     $this->event->onClose($id);
                 } else {
-                    if($this->handle && !$this->_ClientLinks['handle']) {
+                    if($this->handle && !$this->_ClientLinks[$id]['handle']) {
                         echo "websocket handle".PHP_EOL;
-                        $this->handshake($buffer);
+                        $handle = $this->handshake($buffer);
+                        socket_write($this->_links[$id],$handle,strlen($handle));
+                        $this->_ClientLinks[$id]['handle'] = true;
                     } else {
                         $buffer = $this->decode($buffer);
                         $this->event->onMessage($buffer,$id);

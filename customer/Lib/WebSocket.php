@@ -16,7 +16,7 @@ class WebSocket extends SocketSelect
 {
 
     public function __construct() {
-
+        $this->handle = true;
     }
 
     /*

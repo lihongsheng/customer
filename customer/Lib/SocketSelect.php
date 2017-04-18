@@ -69,7 +69,7 @@ abstract class SocketSelect
     /**
      * @throws \Exception
      */
-    public function accept()//& $acceptLink,& $server
+    public function accept()
     {
         $links = $this->_links;
 
@@ -85,12 +85,6 @@ abstract class SocketSelect
         foreach($links as $k=>$r){
             //if(in_array($r,$server)) {
             if($r === $this->_links['server']) {
-                //有新的链接进来
-                /*return ['link'=>socket_accept($r),
-                    'type'=>self::SOCKET_TYPE_ACCEPT,
-                    'key'=>array_search($r,$server),
-                    'msg'=>''];*/
-                //$id = self::generateConnectionId();
                 $eventLink = socket_accept($r);
                 $id = (int)$eventLink;
                 $this->_ClientLinks[$id] = [
@@ -134,7 +128,7 @@ abstract class SocketSelect
         $msg  = $this->encode($msg);
         $no   = socket_write($sign, $msg, strlen($msg));
         return $no;
-        //$nos = socket_send($sign,$msg,strlen($msg),0);
+
     }
 
     public function sendMutily($msg,array $ids)

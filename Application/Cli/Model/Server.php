@@ -21,17 +21,14 @@ use customer\Lib\Queue;
 
 class Server extends Event
 {
-    private   $_links = [];
-    private   $userMap = [];
     private   $_PID = ''; //自身进程ID
-
+    protected $ser;
 
     public function __construct()
     {
-        //创建getway端口
-        $this->getwayServer = WebSocket::createAndListen(Config::GetwayIp,Config::GetwayPort);
 
-        $this->_links['getS']     = $this->getwayServer;
+        $this->ser = new WebSocket();
+        $this->ser->setEvent($this);
         $this->beforeWork();
         $this->pcntlModel  = new PcntlModel(1);
     }
@@ -46,13 +43,21 @@ class Server extends Event
     {
         $this->_PID = posix_getpid();
 
-        $serLink ['server'] = $this->getwayServer;
         while(true) {
-            $data = WebSocket::accept($this->_links,$server);
-
+            $this->ser->accept();
         }
 
     }
 
-    public function
+    public function onConnect($id) {
+
+    }
+
+    public function onMessage($msg,$id) {
+
+    }
+
+    public function onClose($id) {
+
+    }
 }

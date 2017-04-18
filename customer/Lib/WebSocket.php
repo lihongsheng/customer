@@ -20,7 +20,7 @@ class WebSocket extends SocketSelect
     *发送WS协议，建立WS协议链接
     *@param string WS发送的请求协议内容
     */
-    public static function handshake($buffer)
+    public function handshake($buffer)
     {
         //获取KEY及生成新的KEY
         $buf  = substr($buffer,strpos($buffer,'Sec-WebSocket-Key:')+18);
@@ -41,7 +41,7 @@ class WebSocket extends SocketSelect
      * @param $buffer
      * @return string
      */
-    public static function decode($buffer)
+    public function decode($buffer)
     {
         $mask = array();
         $data = '';
@@ -69,22 +69,23 @@ class WebSocket extends SocketSelect
      * @param string $msg
      * @return string
      */
-    public static function encode($msg)
+    public function encode($msg)
     {
         $msg = preg_replace(array('/\r$/','/\n$/','/\r\n$/',), '', $msg);
         $frame = array();
         $frame[0] = '81';
         $len = strlen($msg);
         $frame[1] = $len<16?'0'.dechex($len):dechex($len);
-        $frame[2] = self::ordHex($msg);
+        $frame[2] = $this->ordHex($msg);
         $data = implode('',$frame);
         return pack("H*", $data);
     }
 
     /**
      * @param string $data
+     * @return string
      */
-    private static function ordHex($data) {
+    private function ordHex($data) {
         $msg = '';
         $l = strlen($data);
         for ($i= 0; $i<$l; $i++) {

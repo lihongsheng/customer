@@ -42,10 +42,14 @@ class Server extends Event
     public function work()
     {
         $this->_PID = posix_getpid();
-
+        $this->ser->createAndListen('127.0.0.1','9701');
         while(true) {
             $this->ser->accept();
         }
+
+    }
+
+    protected function beforeWork(){
 
     }
 

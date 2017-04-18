@@ -47,7 +47,7 @@ class PcntlModel
      * 是否守护进程
      * @var bool
      */
-    private $Daemonize = true;
+    private $Daemonize = false;
 
     /**最多开启的工作进程数
      * @var int

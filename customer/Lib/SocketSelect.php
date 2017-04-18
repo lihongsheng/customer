@@ -35,7 +35,7 @@ abstract class SocketSelect
     protected $handle = false;
 
     public function setEvent(Event $event) {
-        self::$event = $event;
+        $this->event = $event;
     }
 
     //创建
@@ -103,10 +103,11 @@ abstract class SocketSelect
                     $this->event->onClose($id);
                 } else {
                     if($this->handle && !$this->_ClientLinks['handle']) {
-                        $this->handshake($data);
+                        echo "websocket handle".PHP_EOL;
+                        $this->handshake($buffer);
                     } else {
-                        $data = $this->decode($data);
-                        $this->ecent->onMessage($data,$id);
+                        $buffer = $this->decode($buffer);
+                        $this->event->onMessage($buffer,$id);
                     }
                 }
 

@@ -15,6 +15,9 @@ use customer\Lib\SocketSelect;
 class WebSocket extends SocketSelect
 {
 
+    public function __construct() {
+
+    }
 
     /*
     *发送WS协议，建立WS协议链接

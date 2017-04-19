@@ -140,6 +140,7 @@ abstract class SocketSelect
         foreach($ids as $r) {
             $this->sendOne($msg,$r);
         }
+        unset($ids);
     }
 
     public function close($id)

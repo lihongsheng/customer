@@ -57,7 +57,11 @@ class Server extends Event
     }
 
     public function onMessage($msg,$id) {
-
+        $jsonMsg = json_decode($msg);
+        switch($jsonMsg['type']) {
+            case '1'://uid与clentid绑定
+            case '2'://解绑uid与clentid
+        }
     }
 
     public function onClose($id) {

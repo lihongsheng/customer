@@ -5,7 +5,7 @@
     <script type="text/javascript">
     </script>
     <link href="https://cdn.bootcss.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../css/style.css" rel="stylesheet">
+    <link href="../../css/style.css" rel="stylesheet">
     <!-- Include these three JS files: -->
     <script type="text/javascript" src="https://cdn.bootcss.com/jquery/2.2.3/jquery.min.js"></script>
 
@@ -38,12 +38,13 @@
             if(!name)
             {
                 // 输入姓名
-                (function(){
+                var alname = function(){
                     name = prompt('输入你的名字：', '');
                     if(!name || name=='null'){
                         name = '游客';
                     }
-                })();
+                };
+                alname();
             }
             // 绑定uid
             var login_data = {

@@ -79,6 +79,7 @@ class Server extends Event
                 $this->userLink[$uid]['n'] = $jsonMsg['name'];
                 $this->fdLink[$id]['u'] = $uid;
                 $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'1','msg'=>true]),$this->userLink[$uid]['l']);
+                //echo $uid.':::1'.PHP_EOL;
                 break;
             case '2'://解绑uid与clentid
                 unset($this->userLink[$uid]['l'],$this->fdLink[$id]['u']);
@@ -89,6 +90,8 @@ class Server extends Event
                 $this->userLink[$uid]['g'][$groupid] = $groupid;
                 $this->groupLink[$groupid][$uid] = $uid;
                 $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'3','msg'=>true]),$this->userLink[$uid]['l']);
+                //echo $uid.'::3---'.$this->userLink[$uid]['l'].PHP_EOL;
+                //echo json_encode($this->groupLink).PHP_EOL;
                 break;
             case '4'://退出组消息
                 $groupid = $jsonMsg['sendid'];
@@ -104,13 +107,17 @@ class Server extends Event
             case '6'://发送用户组消息
                 $sendid = $jsonMsg['sendid'];
                 foreach($this->groupLink[$sendid] as $v) {
-                    $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'6','msg'=>$msg,'uname'=>$this->userLink[$uid]['n']]), $this->userLink[$v]['l']);
+                    $_uid = (int)$v;
+                    $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'6','msg'=>$jsonMsg['msg'],'uname'=>$this->userLink[$uid]['n']]), $this->userLink[$_uid]['l']);
+                    //echo $v.'::UID'.$this->userLink[$_uid]['l'].PHP_EOL;
                 }
+                //echo $uid.'::6'.PHP_EOL;
+                //echo json_encode(['sendid'=>$uid,'type'=>'6','msg'=>$jsonMsg['msg'],'uname'=>$this->userLink[$uid]['n']]).PHP_EOL;
                 break;
             case '7'://获取组用户列表
                 $groupid = $jsonMsg['sendid'];
                 $users = [];
-                foreach($groupid[$groupid] as $v) {
+                foreach($this->groupLink[$groupid] as $v) {
                     $users[] =[
                         'name'=> $this->userLink[$v]['n'],
                         'uid'=> $v];

@@ -109,7 +109,9 @@ abstract class SocketSelect
                         socket_write($this->_links[$id],$handle,strlen($handle));
                         $this->_ClientLinks[$id]['handle'] = true;
                     } else {
+
                         $buffer = $this->decode($buffer);
+                        echo $buffer.PHP_EOL;
                         $this->event->onMessage($buffer,$id);
                     }
                 }
@@ -129,6 +131,7 @@ abstract class SocketSelect
     public function sendOne($msg,$id)
     {
         $sign = $this->_links[$id];
+        if(!$this->_links[$id]) {return;}
         $msg  = $this->encode($msg);
         $no   = socket_write($sign, $msg, strlen($msg));
         return $no;

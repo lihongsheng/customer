@@ -5,7 +5,7 @@
     <script type="text/javascript">
     </script>
     <link href="https://cdn.bootcss.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="../../css/style.css" rel="stylesheet">
+    <link href="/customer/public/css/style.css" rel="stylesheet">
     <!-- Include these three JS files: -->
     <script type="text/javascript" src="https://cdn.bootcss.com/jquery/2.2.3/jquery.min.js"></script>
 
@@ -25,7 +25,7 @@
             ws.onmessage = onmessage;
             ws.onclose = function() {
                 console.log("连接关闭，定时重连");
-                connect();
+                //connect();
             };
             ws.onerror = function() {
                 console.log("出现错误");
@@ -52,19 +52,31 @@
                 "uid":uid,
                 "name":name,
                 "msg":"",
-                "senid":""
+                "sendid":""
             };
-            console.log("websocket握手成功，发送登录数据:"+login_data);
+            console.log("websocket握手成功，发送登录数据:"+JSON.stringify(login_data));
             ws.send(JSON.stringify(login_data));
             //加入组
-            var login_data = {
+            setTimeout(function(){
+                var login_data = {
+                    "type":3,
+                    "uid":uid,
+                    "name":name,
+                    "msg":"",
+                    "sendid":"1"
+                };
+                console.log(JSON.stringify(login_data));
+                ws.send(JSON.stringify(login_data));
+            },200);
+           /* var login_data = {
                 "type":3,
                 "uid":uid,
                 "name":name,
                 "msg":"",
                 "senid":"1"
             };
-            ws.send(JSON.stringify(login_data));
+            ws.send(JSON.stringify(login_data));*/
+            /*console.log(JSON.stringify(login_data));
             //发送组
             var login_data = {
                 "type":6,
@@ -72,7 +84,18 @@
                 "msg":name + '加入房间',
                 "senid":"1"
             };
-            ws.send(JSON.stringify(login_data));
+            console.log(JSON.stringify(login_data));
+            ws.send(JSON.stringify(login_data));*/
+            setTimeout(function(){
+                var login_data = {
+                    "type":6,
+                    "uid":uid,
+                    "msg":name + '---加入房间',
+                    "sendid":"1"
+                };
+                console.log(JSON.stringify(login_data));
+                ws.send(JSON.stringify(login_data));
+            },500);
         }
 
         // 服务端发来消息时
@@ -98,9 +121,27 @@
                     //flush_client_list();
                     //console.log(data['client_name']+"登录成功");
                     break;
+                case '7':
+                    var userlist_window = $("#userlist");
+                    userlist_window.empty();
+                    userlist_window.append('<h4>在线用户</h4><ul>');
+                    for(var i in data.msg) {
+                        userlist_window.append('<li id="'+data.msg[i].uid+'">'+data.msg[i].name+'</li>');
+                    }
+                    userlist_window.append("</ul>");
+                    break;
             }
         }
 
+        setInterval(function(){
+            var login_data = {
+                "type":7,
+                "uid":uid,
+                "msg":"",
+                "sendid":"1"
+            };
+            ws.send(JSON.stringify(login_data));
+        },3500);
 
         // 提交对话
         function onSubmit() {
@@ -112,7 +153,7 @@
                 "type":6,
                 "uid":uid,
                 "msg":input.value,
-                "senid":to_client_id
+                "sendid":1
             };
             ws.send(JSON.stringify(login_data));
             input.value = "";

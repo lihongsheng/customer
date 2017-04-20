@@ -72,16 +72,34 @@ class WebSocket extends SocketSelect
      * @param string $msg
      * @return string
      */
-    public function encode($msg)
+    public function encode_old($msg)
     {
         $msg = preg_replace(array('/\r$/','/\n$/','/\r\n$/',), '', $msg);
         $frame = array();
         $frame[0] = '81';
-        $len = strlen($msg);
+        $len = mb_strlen($msg);
         $frame[1] = $len<16?'0'.dechex($len):dechex($len);
         $frame[2] = $this->ordHex($msg);
         $data = implode('',$frame);
         return pack("H*", $data);
+    }
+
+    public function encode($buffer)
+    {
+        $msg = preg_replace(array('/\r$/','/\n$/','/\r\n$/',), '', $msg);
+        $len = strlen($buffer);
+        $first_byte = "\x81";
+        if ($len <= 125) {
+            $encode_buffer = $first_byte . chr($len) . $buffer;
+        } else {
+            if ($len <= 65535) {
+                $encode_buffer = $first_byte . chr(126) . pack("n", $len) . $buffer;
+            } else {
+                $encode_buffer = $first_byte . chr(127) . pack("xxxxN", $len) . $buffer;
+            }
+        }
+
+        return $encode_buffer;
     }
 
     /**

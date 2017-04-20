@@ -83,14 +83,14 @@ class Router
     private function formatUri()
     {
         $this->pathInfo = Tools::removeInvisibleCharacters($this->pathInfo,false);
-        echo $this->pathInfo.PHP_EOL;
+        //echo $this->pathInfo.PHP_EOL;
         $slen = strlen(Config::$router['urlSuffix']);
 
         if (substr($this->pathInfo, -$slen) === Config::$router['urlSuffix'])
         {
             $this->pathInfo = substr($this->pathInfo, 0, -$slen);
         }
-        exit($this->pathInfo);
+        //exit($this->pathInfo);
 
     }
 

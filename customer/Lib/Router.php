@@ -55,7 +55,6 @@ class Router
             $this->module = ucfirst(strtolower($uri[0]));
             $this->method = ucfirst(strtolower($uri[1]));
             $this->action = strtolower($uri[2]);
-            exit($this->module);
             $len = count($uri);
             if($len > 3) {
                 for($i = 3;$i<$len;$i++){
@@ -84,12 +83,14 @@ class Router
     private function formatUri()
     {
         $this->pathInfo = Tools::removeInvisibleCharacters($this->pathInfo,false);
+        echo $this->pathInfo.PHP_EOL;
         $slen = strlen(Config::$router['urlSuffix']);
 
         if (substr($this->uri_string, -$slen) === Config::$router['urlSuffix'])
         {
             $this->pathInfo = substr($this->uri_string, 0, -$slen);
         }
+        exit($this->pathInfo);
 
     }
 

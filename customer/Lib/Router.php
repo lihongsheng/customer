@@ -86,9 +86,9 @@ class Router
         echo $this->pathInfo.PHP_EOL;
         $slen = strlen(Config::$router['urlSuffix']);
 
-        if (substr($this->uri_string, -$slen) === Config::$router['urlSuffix'])
+        if (substr($this->pathInfo, -$slen) === Config::$router['urlSuffix'])
         {
-            $this->pathInfo = substr($this->uri_string, 0, -$slen);
+            $this->pathInfo = substr($this->pathInfo, 0, -$slen);
         }
         exit($this->pathInfo);
 

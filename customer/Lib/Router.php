@@ -32,6 +32,7 @@ class Router
     public function dispatcher(){
         $isCli = Tools::isCli();
         if($isCli) {
+            exit($_SERVER['argv'][1]);
             $this->pathInfo = isset($_SERVER['argv'][1]) ? $_SERVER['argv'][1] : (isset($argv[1]) ? $argv['1'] : '');
         } else {
             //获取PATH_INFO

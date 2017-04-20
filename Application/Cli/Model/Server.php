@@ -78,17 +78,17 @@ class Server extends Event
                 $this->userLink[$uid]['l'] = $id;
                 $this->userLink[$uid]['n'] = $jsonMsg['name'];
                 $this->fdLink[$id]['u'] = $uid;
-                $this->ser->sendOne(['sendid'=>$uid,'type'=>'1','msg'=>true]);
+                $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'1','msg'=>true]),$this->userLink[$uid]['l']);
                 break;
             case '2'://解绑uid与clentid
                 unset($this->userLink[$uid]['l'],$this->fdLink[$id]['u']);
-                $this->ser->sendOne(['sendid'=>$uid,'type'=>'2','msg'=>true]);
+                $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'2','msg'=>true]),$this->userLink[$uid]['l']);
                 break;
             case '3'://加入组消息
                 $groupid = $jsonMsg['sendid'];
                 $this->userLink[$uid]['g'][$groupid] = $groupid;
                 $this->groupLink[$groupid][$uid] = $uid;
-                $this->ser->sendOne(['sendid'=>$uid,'type'=>'3','msg'=>true]);
+                $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'3','msg'=>true]),$this->userLink[$uid]['l']);
                 break;
             case '4'://退出组消息
                 $groupid = $jsonMsg['sendid'];

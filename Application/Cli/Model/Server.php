@@ -94,17 +94,17 @@ class Server extends Event
                 $groupid = $jsonMsg['sendid'];
                 unset($this->userLink[$uid]['g'][$groupid]);
                 unset($this->groupLink[$groupid][$uid]);
-                $this->ser->sendOne(['sendid'=>$uid,'type'=>'4','msg'=>true]);
+                $this->ser->sendOne(json_encode(['sendid'=>$uid,'uname'=>$this->userLink[$uid]['n'],'type'=>'4','msg'=>true]),$this->userLink[$uid]['l']);
                 break;
             case '5'://发送用户消息
                 $sendid = $jsonMsg['sendid'];
                 $msg    = $jsonMsg['msg'];
-                $this->ser->sendOne(json_encode(['sendid'=>$this->userLink[$sendid]['l'],'type'=>'5','msg'=>$msg]), $this->userLink[$sendid]);
+                $this->ser->sendOne(json_encode(['sendid'=>$uid,'uname'=>$this->userLink[$uid]['n'],'revuid'=>$sendid,'type'=>'5','msg'=>$msg]), $this->userLink[$sendid]['l']);
                 break;
             case '6'://发送用户组消息
                 $sendid = $jsonMsg['sendid'];
                 foreach($this->groupLink[$sendid] as $v) {
-                    $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'6','msg'=>$msg]), $v);
+                    $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'6','msg'=>$msg,'uname'=>$this->userLink[$uid]['n']]), $this->userLink[$v]['l']);
                 }
                 break;
             case '7'://获取组用户列表
@@ -115,7 +115,7 @@ class Server extends Event
                         'name'=> $this->userLink[$v]['n'],
                         'uid'=> $v];
                 }
-                $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'7','msg'=>$users]),$id);
+                $this->ser->sendOne(json_encode(['sendid'=>$uid,'type'=>'7','msg'=>$users]),$this->userLink[$uid]['l']);
         }
     }
 

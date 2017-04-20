@@ -11,10 +11,8 @@
 
     <script type="text/javascript">
         if (typeof console == "undefined") {    this.console = { log: function (msg) {  } };}
-
         var ws, name, client_list={};
         var uid;
-
         // 连接服务端
         function connect() {
             var tmp = Math.random()*(1000-100) + 100;
@@ -66,7 +64,7 @@
             ws.send(JSON.stringify(login_data));
             //发送组
             var login_data = {
-                "type":7,
+                "type":6,
                 "uid":uid,
                 "msg":name + '加入房间',
                 "senid":"1"
@@ -93,29 +91,10 @@
                 case '5': //用户消息
                     break;
                 case '6'://用户组消息
-                    say(data['client_id'], data['client_name'],  data['client_name']+' 加入了聊天室', data['time']);
-                    if(data['client_list'])
-                    {
-                        client_list = data['client_list'];
-                    }
-                    else
-                    {
-                        client_list[data['client_id']] = data['client_name'];
-                    }
-                    flush_client_list();
-                    console.log(data['client_name']+"登录成功");
+                    say(data['sendid'], data['uname'],  data['msg'], data['time']);
+                    //flush_client_list();
+                    //console.log(data['client_name']+"登录成功");
                     break;
-                // 发言
-                case 'say':
-                    //{"type":"say","from_client_id":xxx,"to_client_id":"all/client_id","content":"xxx","time":"xxx"}
-                    say(data['from_client_id'], data['from_client_name'], data['content'], data['time']);
-                    break;
-                // 用户退出 更新用户列表
-                case 'logout':
-                    //{"type":"logout","client_id":xxx,"time":"xxx"}
-                    say(data['from_client_id'], data['from_client_name'], data['from_client_name']+' 退出了', data['time']);
-                    delete client_list[data['from_client_id']];
-                    flush_client_list();
             }
         }
 
@@ -125,7 +104,14 @@
             var input = document.getElementById("textarea");
             var to_client_id = $("#client_list option:selected").attr("value");
             var to_client_name = $("#client_list option:selected").text();
-            ws.send('{"type":"say","to_client_id":"'+to_client_id+'","to_client_name":"'+to_client_name+'","content":"'+input.value.replace(/"/g, '\\"').replace(/\n/g,'\\n').replace(/\r/g, '\\r')+'"}');
+            //发送组
+            var login_data = {
+                "type":6,
+                "uid":uid,
+                "msg":input.value,
+                "senid":to_client_id
+            };
+            ws.send(JSON.stringify(login_data));
             input.value = "";
             input.focus();
         }
@@ -148,7 +134,7 @@
 
         // 发言
         function say(from_client_id, from_client_name, content, time){
-            $("#dialog").append('<div class="speech_item"><img src="http://lorempixel.com/38/38/?'+from_client_id+'" class="user_icon" /> '+from_client_name+' <br> '+time+'<div style="clear:both;"></div><p class="triangle-isosceles top">'+content+'</p> </div>');
+            $("#dialog").append('<div class="speech_item"><img src="" class="user_icon" /> '+from_client_name+' <br> '+time+'<div style="clear:both;"></div><p class="triangle-isosceles top">'+content+'</p> </div>');
         }
 
         $(function(){

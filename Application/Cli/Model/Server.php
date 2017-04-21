@@ -44,7 +44,7 @@ class Server extends Event
         $this->_PID = posix_getpid();
         $this->ser = new WebSocket();
         $this->ser->setEvent($this);
-        $this->ser->createAndListen('127.0.0.1','20072');
+        $this->ser->createAndListen('0.0.0.0','20072');
         while(true) {
             $this->ser->accept();
         }

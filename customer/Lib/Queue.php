@@ -52,7 +52,7 @@ class Queue
      * @return bool
      */
     public function get($tag = 0) {
-        $data = msg_receive($this->msgKey, $tag, $msgType, 1024, $message);
+        $data = msg_receive($this->msgKey, $tag, $msgType, 1024, $message, true, MSG_IPC_NOWAIT);
         if($data) {
             return $message;
         }

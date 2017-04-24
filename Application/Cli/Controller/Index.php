@@ -76,8 +76,9 @@ class Index extends Controller
     public function testAction()
     {
         $msgKey = msg_get_queue('57000');
-        msg_send($msgKey,1,['ml'=>';;']);
-        msg_receive($msgKey,0,$type,1024,$message);
+       // msg_send($msgKey,1,['ml'=>';;']);
+        msg_receive($msgKey,0,$type,1024,$message,true,MSG_IPC_NOWAIT);
+        echo ';;;';
         var_dump($message);
         msg_remove_queue($msgKey);
     }

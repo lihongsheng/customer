@@ -62,7 +62,7 @@ class Getway extends Event
 
     public function work()
     {
-        $this->queueModel = new RedisQueue();
+        $this->queueModel = new Queue();
         $this->_PID = posix_getpid();
         //链接register
         $registerIp = Config::RegisterIp == '0.0.0.0' ? '127.0.0.1' : Config::RegisterIp;

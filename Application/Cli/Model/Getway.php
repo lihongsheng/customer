@@ -62,7 +62,7 @@ class Getway extends Event
 
     public function work()
     {
-        $this->queueModel = new RedisQueue();
+        $this->queueModel = new Queue();
         $this->_PID = posix_getpid();
         //链接register
         $registerIp = Config::RegisterIp == '0.0.0.0' ? '127.0.0.1' : Config::RegisterIp;
@@ -333,6 +333,7 @@ class Getway extends Event
         foreach($uids as $k=>$val) {
             if($this->userMap[$val]) { //如果进程中存在此用户，在此进程中处理这条消息
                 WebSocket::sendOne(WebSocket::encode(json_encode(['eventType'=>$type,'pid'=>$this->_PID,'body'=>$body])),$this->userMap[$val]);
+                echo "<<<<<<< :: >>>>>>>".$val;
                 unset($uids[$k]);
             }
         }
@@ -341,7 +342,7 @@ class Getway extends Event
                 foreach($this->worksLink as $wk=>$v) {
                     //$msg['linkType'] == self::LINK_TYPE_WORK
                     $no = TextSocket::sendOne(TextSocket::encode(json_encode(['linkType'=>self::LINK_TYPE_WORK,'eventType'=>self::EVENT_TYPE_MSG, 'uids'=>$uids, 'body'=>$body])),$v);
-                    echo $wk.$this->_PID.PHP_EOL;
+                    echo ">>>>>>".$wk.$this->_PID.PHP_EOL;
                     var_dump($v);
                     break;
                 }

@@ -55,7 +55,6 @@ class Server extends Event
     }
 
 
-<<<<<<< HEAD
     /**
      * 在web端登录后，发起websocket请求建立长链接
      * 根据cookie信息来添加用户UID与client的绑定
@@ -141,6 +140,5 @@ class Server extends Event
         unset($this->fdLink[$id]);
 
     }
-=======
->>>>>>> newlhs
+
 }

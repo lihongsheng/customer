@@ -22,4 +22,9 @@ class NewIndex extends Controller
         $ser = new Server();
         $ser->run();
     }
+
+
+    public function testAction() {
+
+    }
 }

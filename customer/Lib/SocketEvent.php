@@ -71,3 +71,49 @@ event_buffer_enable 启用那些缓冲事件 EV_READ, EV_WRITE , EV_PERSIST
 event_buffer_free释放
 event_butter_read 读取数据从缓冲事件
 event_buffer_write 写入数据到缓冲区
+*/
+
+namespace customer\Lib;
+
+use Cli\Model\Event;
+
+class SocketEvent {
+    protected $_ClientLinks = [];  //客服端的链接
+    protected $_uidLinks     = []; //uid与客服端绑定
+    protected $_links = [];
+    protected $bEvent;
+    protected $event;
+
+    protected $aceept;
+    protected $read;
+    protected $write;
+    protected $error;
+
+    public function __construct() {
+        //定义接受请求的函数
+        /**
+         * @param $listenFd
+         * @param $flag
+         * @param $bEvent
+         */
+        $this->aceept = function($listenFd,$flag,$bEvent) {
+            $accept = socket_accept($listenFd);
+            $id = (int)$accept;
+            $this->_ClientLinks[$id]['link']   = $accept;
+            $this->_ClientLinks[$id]['handle'] = false;
+            $buffer = event_base_new($accept,$this->read,$this->write,$this->error,$id);
+            event_buffer_base_set($buffer,$bEvent);
+            event_buffer_timeout_set($buffer, 30, 30);
+            event_buffer_enable($accept,EV_READ|EV_PERSIST,0, 0xffffff);
+        };
+
+        $this->write = null;
+        /**
+         * @param $buffer
+         * @param $id
+         */
+        $this->read = function($buffer,$id) {
+
+        };
+    }
+}

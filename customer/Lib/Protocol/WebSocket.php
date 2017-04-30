@@ -9,10 +9,11 @@
  * $Id$
  */
 
-namespace customer\Lib;
+namespace customer\Lib\Protocol;
 
-use customer\Lib\SocketSelect;
-class WebSocket extends SocketSelect
+use Protocol;
+
+class WebSocket extends Protocol
 {
 
     public function __construct() {

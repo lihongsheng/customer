@@ -2,18 +2,18 @@
 /**
  * TextSocket.php
  * 文本协议
- * 作者: Bright (dannyzml@qq.com)
+ * 作者: 李红生 (549940183@qq.com)
  * 创建日期: 17/2/16 下午10:57
  * 修改记录:
  *
  * $Id$
  */
 
-namespace customer\Lib;
+namespace customer\Lib\Protocol;
 
-use customer\Lib\SocketSelect;
+use Protocol;
 
-class TextSocket extends SocketSelect
+class TextSocket extends Protocol
 {
 
 

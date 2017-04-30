@@ -13,15 +13,39 @@ namespace customer\Lib;
 
 class Timer
 {
-    protected static $_tasks  = [];
-    protected static $_taskId = [];
+    /**
+     * Tasks that based on ALARM signal.
+     * [
+     *   run_time => [[$func, $args, $persistent, time_interval],[$func, $args, $persistent, time_interval],..]],
+     *   run_time => [[$func, $args, $persistent, time_interval],[$func, $args, $persistent, time_interval],..]],
+     *   ..
+     * ]
+     *
+     * @var array
+     */
+    protected static $_tasks = array();
 
+    /**
+     * event
+     *
+     * @var \Workerman\Events\EventInterface
+     */
+    protected static $_event = null;
 
-    public static function init()
+    /**
+     * Init.
+     *
+     * @param \Workerman\Events\EventInterface $event
+     * @return void
+     */
+    public static function init($event = null)
     {
-        pcntl_signal(SIGALRM, array('customer\Lib\Timer', 'signalHandle'), false);
+        if ($event) {
+            self::$_event = $event;
+        } else {
+            pcntl_signal(SIGALRM, array('\Workerman\Lib\Timer', 'signalHandle'), false);
+        }
     }
-
 
     /**
      * ALARM signal handler.
@@ -30,20 +54,20 @@ class Timer
      */
     public static function signalHandle()
     {
-        self::tick();
-        //pcntl_alarm(1);
+        if (!self::$_event) {
+            pcntl_alarm(1);
+            self::tick();
+        }
     }
 
-
-
     /**
-     * 添加定时器事件
+     * Add a timer.
      *
-     * @param int      $time_interval  时间
-     * @param callback $func    回调函数
-     * @param mixed    $args    函数参数
-     * @param bool     $persistent  是否重新注册
-     * @return string
+     * @param int      $time_interval
+     * @param callback $func
+     * @param mixed    $args
+     * @param bool     $persistent
+     * @return bool
      */
     public static function add($time_interval, $func, $args = array(), $persistent = true)
     {
@@ -52,29 +76,29 @@ class Timer
             return false;
         }
 
+        if (self::$_event) {
+            return self::$_event->add($time_interval,
+                $persistent ? EventInterface::EV_TIMER : EventInterface::EV_TIMER_ONCE, $func, $args);
+        }
 
         if (!is_callable($func)) {
             echo new Exception("not callable");
             return false;
         }
 
-        $id = md5(get_class($func[0]).$func[1]);
-        if(!self::$_taskId[$id]) {
-            self::$_taskId[$id] = $id;
+        if (empty(self::$_tasks)) {
+            pcntl_alarm(1);
         }
 
-        /*if (empty(self::$_tasks)) {
-            pcntl_alarm(1);
-        }*/
-        pcntl_alarm(1);
         $time_now = time();
         $run_time = $time_now + $time_interval;
         if (!isset(self::$_tasks[$run_time])) {
             self::$_tasks[$run_time] = array();
         }
         self::$_tasks[$run_time][] = array($func, (array)$args, $persistent, $time_interval);
-        return $id;
+        return true;
     }
+
 
     /**
      * Tick.
@@ -101,8 +125,7 @@ class Timer
                     } catch (\Exception $e) {
                         echo $e;
                     }
-                    $id = md5(get_class($task_func[0]).$task_func[1]);
-                    if ($persistent && self::$_taskId[$id]) {
+                    if ($persistent) {
                         self::add($time_interval, $task_func, $task_args);
                     }
                 }
@@ -111,27 +134,32 @@ class Timer
         }
     }
 
-
-    public static function del($time_id)
+    /**
+     * Remove a timer.
+     *
+     * @param mixed $timer_id
+     * @return bool
+     */
+    public static function del($timer_id)
     {
-        if(self::$_taskId[$time_id]) {
-            if(!empty(self::$_tasks)) {
-                foreach (self::$_tasks as $run_time => $task_data) {
-                    foreach ($task_data as $index => $one_task) {
-                        $task_func = $one_task[0];
-                        $id = md5(get_class($task_func[0]).$task_func[1]);
-                        if($id == $time_id) {
-                            unset(self::$_tasks[$run_time],self::$_taskId[$time_id]);
-                        }
-                    }
-                }
-            }
+        if (self::$_event) {
+            return self::$_event->del($timer_id, EventInterface::EV_TIMER);
         }
+
+        return false;
     }
 
+    /**
+     * Remove all timers.
+     *
+     * @return void
+     */
     public static function delAll()
     {
-        self::$_tasks  = [];
-        self::$_taskId = [];
+        self::$_tasks = array();
+        pcntl_alarm(0);
+        if (self::$_event) {
+            self::$_event->clearAllTimer();
+        }
     }
 }

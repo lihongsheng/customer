@@ -87,7 +87,7 @@ class WebSocket extends Protocol
 
     public function encode($buffer)
     {
-        $msg = preg_replace(array('/\r$/','/\n$/','/\r\n$/',), '', $msg);
+        $msg = preg_replace(array('/\r$/','/\n$/','/\r\n$/',), '', $buffer);
         $len = strlen($buffer);
         $first_byte = "\x81";
         if ($len <= 125) {
@@ -114,6 +114,13 @@ class WebSocket extends Protocol
             $msg .= dechex(ord($data{$i}));
         }
         return $msg;
+    }
+
+    /**
+     * @param $buffer
+     */
+    public static function isProtocol($buffer) {
+
     }
 
 }

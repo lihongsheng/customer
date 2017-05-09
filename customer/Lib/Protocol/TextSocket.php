@@ -41,4 +41,8 @@ class TextSocket extends Protocol
         return $msg;
     }
 
+    public static function isProtocol($buffer) {
+
+    }
+
 }

@@ -119,7 +119,7 @@ class PcntlModel
 
     private function setMaxsize($maxSize)
     {
-        $this->MaxSize = $maxSize ? $maxSize : Config::MaxSize;
+        $this->MaxSize = $maxSize || $maxSize === 0 ? $maxSize : Config::MaxSize;
     }
 
     public function setDaemonize()
@@ -328,7 +328,7 @@ class PcntlModel
 
             pcntl_signal_dispatch();
             // 如果一个子进程已经退出
-            if ($pid > 0) {
+            if ($pid > 0 && $this->MaxSize) {
                 if ($this->Status !== PcntlModel::STATUS_SHUTDOWN) {
                     if($this->works[$pid]) {
                         unset($this->works[$pid]);

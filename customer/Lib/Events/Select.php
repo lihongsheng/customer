@@ -15,7 +15,7 @@ use customer\Lib\Events\EventInterface;
 
 class Select implements EventInterface {
     /**
-     * All listeners for read/write event.
+     * 所有的读写事件.
      *
      * @var array
      */

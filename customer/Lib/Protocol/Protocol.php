@@ -15,4 +15,8 @@ abstract class Protocol {
     abstract public function encode($msg);
     abstract public function decode($buffer);
     abstract public function handshake($buffer);
+    abstract public function isProtocol($buffer);
+    protected function isHandle() {
+        return $this->handle;
+    }
 }

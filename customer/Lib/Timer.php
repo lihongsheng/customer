@@ -14,13 +14,6 @@ namespace customer\Lib;
 class Timer
 {
     /**
-     * Tasks that based on ALARM signal.
-     * [
-     *   run_time => [[$func, $args, $persistent, time_interval],[$func, $args, $persistent, time_interval],..]],
-     *   run_time => [[$func, $args, $persistent, time_interval],[$func, $args, $persistent, time_interval],..]],
-     *   ..
-     * ]
-     *
      * @var array
      */
     protected static $_tasks = array();
@@ -28,14 +21,14 @@ class Timer
     /**
      * event
      *
-     * @var \Workerman\Events\EventInterface
+     * @var \customer\Lib\Events\EventInterface
      */
     protected static $_event = null;
 
     /**
      * Init.
      *
-     * @param \Workerman\Events\EventInterface $event
+     * @param \customer\Lib\Events\EventInterface $event
      * @return void
      */
     public static function init($event = null)
@@ -43,12 +36,12 @@ class Timer
         if ($event) {
             self::$_event = $event;
         } else {
-            pcntl_signal(SIGALRM, array('\Workerman\Lib\Timer', 'signalHandle'), false);
+            pcntl_signal(SIGALRM, array('\customer\Lib\Timer', 'signalHandle'), false);
         }
     }
 
     /**
-     * ALARM signal handler.
+     * alarm信号
      *
      * @return void
      */
@@ -61,13 +54,13 @@ class Timer
     }
 
     /**
-     * Add a timer.
+     * 添加定时任务
      *
      * @param int      $time_interval
      * @param callback $func
      * @param mixed    $args
      * @param bool     $persistent
-     * @return bool
+     * @return bool|int
      */
     public static function add($time_interval, $func, $args = array(), $persistent = true)
     {

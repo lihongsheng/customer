@@ -11,20 +11,23 @@
 
 namespace customer\Lib\Protocol;
 
-use Protocol;
+
+
+use customer\Lib\Protocol\Protocol;
 
 class WebSocket extends Protocol
 {
 
     public function __construct() {
-        $this->handle = true;
+        $this->ishandle = true;
     }
+
 
     /*
     *发送WS协议，建立WS协议链接
     *@param string WS发送的请求协议内容
     */
-    public function handshake($buffer)
+    public function handle($buffer)
     {
         //获取KEY及生成新的KEY
         $buf  = substr($buffer,strpos($buffer,'Sec-WebSocket-Key:')+18);
@@ -116,11 +119,13 @@ class WebSocket extends Protocol
         return $msg;
     }
 
-    /**
-     * @param $buffer
-     */
-    public static function isProtocol($buffer) {
 
+
+    /**
+     * @return bool
+     */
+    public function isHandle() {
+        return $this->ishandle;
     }
 
 }

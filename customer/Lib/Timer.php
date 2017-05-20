@@ -11,6 +11,8 @@
 
 namespace customer\Lib;
 
+use customer\Lib\Events\EventInterface;
+
 class Timer
 {
     /**
@@ -21,14 +23,14 @@ class Timer
     /**
      * event
      *
-     * @var \customer\Lib\Events\EventInterface
+     * @var \customer\Lib\Events\Event
      */
     protected static $_event = null;
 
     /**
      * Init.
      *
-     * @param \customer\Lib\Events\EventInterface $event
+     * @param \customer\Lib\Events\Event $event
      * @return void
      */
     public static function init($event = null)
@@ -69,15 +71,16 @@ class Timer
             return false;
         }
 
+        if (!is_callable($func)) {
+            echo new Exception("not callable");
+            return false;
+        }
+
         if (self::$_event) {
             return self::$_event->add($time_interval,
                 $persistent ? EventInterface::EV_TIMER : EventInterface::EV_TIMER_ONCE, $func, $args);
         }
 
-        if (!is_callable($func)) {
-            echo new Exception("not callable");
-            return false;
-        }
 
         if (empty(self::$_tasks)) {
             pcntl_alarm(1);
@@ -128,7 +131,7 @@ class Timer
     }
 
     /**
-     * Remove a timer.
+     * 删除一个定时操作
      *
      * @param mixed $timer_id
      * @return bool
@@ -143,7 +146,7 @@ class Timer
     }
 
     /**
-     * Remove all timers.
+     * 移除所有的定时操作
      *
      * @return void
      */

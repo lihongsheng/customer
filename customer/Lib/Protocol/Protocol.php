@@ -11,12 +11,10 @@
 namespace customer\Lib\Protocol;
 
 abstract class Protocol {
-    protected $handle = false;
+    protected $ishandle = false;
     abstract public function encode($msg);
     abstract public function decode($buffer);
-    abstract public function handshake($buffer);
-    abstract public function isProtocol($buffer);
-    protected function isHandle() {
-        return $this->handle;
-    }
+    abstract public function handle($buffer);
+    /*abstract public function isProtocol($buffer);*/
+    abstract protected function isHandle();
 }

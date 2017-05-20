@@ -79,16 +79,22 @@ use customer\Lib\Events\EventInterface;
 
 
 
-class LibEvent implements EventInterface {
+class Event implements EventInterface {
 
     protected $_eventBase;
     protected $_allEvents = [];
     protected $_allTimer  = [];
     protected $_allSignal = [];
+    protected $_eventTimer = [];
+    /**
+     * Timer id.
+     * @var int
+     */
+    protected static $_timerId = 0;
 
     public function __construct()
     {
-        $this->_eventBase = \event_base_new();
+        $this->_eventBase = new \EventBase();
     }
 
 
@@ -104,103 +110,114 @@ class LibEvent implements EventInterface {
         $id = (int)$fd;
         switch ($flag) {
             case self::EV_SIGNAL:
+
+                $fd_key = (int)$fd;
+                $event = \Event::signal($this->_eventBase, $fd, $func);
+                if (!$event||!$event->add()) {
+                    return false;
+                }
+                $this->_eventSignal[$fd_key] = $event;
+                return true;
             case self::EV_TIMER;
             case self::EV_TIMER_ONCE:
-                $event    = event_new();
-                $timer_id = (int)$event;
-                if (!event_set($event, 0, EV_TIMEOUT, array($this, 'timerCallback'), $timer_id)) {
-                    return false;
-                }
-                if (!event_base_set($event, $this->_eventBase)) {
-                    return false;
-                }
-                $time_interval = $fd * 1000000;
-                if (!event_add($event, $time_interval)) {
-                    return false;
-                }
-                /**
-                 * 0回调函数
-                 * 1参数
-                 * 2事件ID
-                 * 3事件标签
-                 * 4时间
-                 */
-                $this->_eventTimer[$timer_id] = array($func, (array)$args, $event, $flag, $time_interval);
-                return $timer_id;
-            case self::EV_READ:
-                $fd_key    = (int)$fd;
-                $real_flag  = EV_READ | EV_PERSIST;
-                $event = event_new();
-                if (!event_set($event, $fd, $real_flag, $func, null)) {
-                    return false;
-                }
+                self::$_timerId++;
+            /**
+             * 0回调函数
+             * 1参数
+             * 2事件标签
+             * 3事件ID
+             * 4 时间索引
+             */
+                $param = array($func, (array)$args, $flag, $fd, self::$_timerId);
+                $event = new \Event($this->_eventBase, -1, \Event::TIMEOUT|\Event::PERSIST, array($this, "timerCallback"), $param);
 
-                if (!event_base_set($event, $this->_eventBase)) {
+
+                if (!$event||!$event->addTimer($fd)) {
                     return false;
                 }
-
-                if (!event_add($event)) {
+                $this->_eventTimer[self::$_timerId] = $event;
+                return self::$_timerId;
+            default :
+                $fd_key = (int)$fd;
+                $real_flag = $flag === self::EV_READ ? \Event::READ | \Event::PERSIST : \Event::WRITE | \Event::PERSIST;
+                $event = new \Event($this->_eventBase, $fd, $real_flag, $func, $fd);
+                if (!$event||!$event->add()) {
                     return false;
                 }
-
                 $this->_allEvents[$fd_key][$flag] = $event;
-
                 return true;
         }
     }
 
-    protected function timerCallback($_null1, $_null2, $timer_id)
+    /**
+     * Timer callback.
+     * @param null $fd
+     * @param int $what
+     * @param int $timer_id
+     */
+    public function timerCallback($fd, $what, $param)
     {
-        //持续性事件在指定秒数执行后再次添加的事件监听中去
-        if ($this->_eventTimer[$timer_id][3] === self::EV_TIMER) {
-            event_add($this->_eventTimer[$timer_id][2], $this->_eventTimer[$timer_id][4]);
+        /**
+         * $param
+         * 0回调函数
+         * 1参数
+         * 2事件标签
+         * 3事件ID
+         * 4 时间索引
+         */
+        $timer_id = $param[4];
+
+        //如果只是执行一次的时间事件
+        if ($param[2] === self::EV_TIMER_ONCE) {
+            $this->_eventTimer[$timer_id]->del();
+            unset($this->_eventTimer[$timer_id]);
         }
+
         try {
-            //回调函数
-            /**
-             * 0回调函数
-             * 1参数
-             * 2事件ID
-             * 3事件标签
-             * 4时间
-             */
-            call_user_func_array($this->_eventTimer[$timer_id][0], $this->_eventTimer[$timer_id][1]);
+            call_user_func_array($param[0], $param[1]);
         } catch (\Exception $e) {
-            exit(250);
+            exit($e->getMessage());
         } catch (\Error $e) {
-            exit(250);
-        }
-        //一次性事件
-        if (isset($this->_eventTimer[$timer_id]) && $this->_eventTimer[$timer_id][3] === self::EV_TIMER_ONCE) {
-            $this->del($timer_id, self::EV_TIMER_ONCE);
+            exit($e->getMessage());
         }
     }
 
-    public function del($fd, $flag) {
+
+    /**
+     * @param mixed $fd
+     * @param int $flag
+     * @return bool
+     */
+    public function del($fd, $flag)
+    {
         switch ($flag) {
+
             case self::EV_READ:
             case self::EV_WRITE:
+
                 $fd_key = (int)$fd;
                 if (isset($this->_allEvents[$fd_key][$flag])) {
-                    event_del($this->_allEvents[$fd_key][$flag]);
+                    $this->_allEvents[$fd_key][$flag]->del();
                     unset($this->_allEvents[$fd_key][$flag]);
                 }
                 if (empty($this->_allEvents[$fd_key])) {
                     unset($this->_allEvents[$fd_key]);
                 }
                 break;
+
             case  self::EV_SIGNAL:
+
                 $fd_key = (int)$fd;
                 if (isset($this->_eventSignal[$fd_key])) {
-                    event_del($this->_eventSignal[$fd_key]);
+                    $this->_allEvents[$fd_key][$flag]->del();
                     unset($this->_eventSignal[$fd_key]);
                 }
                 break;
+
             case self::EV_TIMER:
             case self::EV_TIMER_ONCE:
-                // 这里 fd 为timerid
                 if (isset($this->_eventTimer[$fd])) {
-                    event_del($this->_eventTimer[$fd][2]);
+                    $this->_eventTimer[$fd]->del();
                     unset($this->_eventTimer[$fd]);
                 }
                 break;
@@ -209,11 +226,13 @@ class LibEvent implements EventInterface {
     }
 
     /**
-     * 清除所有时间的事件
+     *
+     * @return void
      */
-    public function clearAllTimer() {
-        foreach ($this->_eventTimer as $task_data) {
-            event_del($task_data[2]);
+    public function clearAllTimer()
+    {
+        foreach ($this->_eventTimer as $event) {
+            $event->del();
         }
         $this->_eventTimer = array();
     }
@@ -222,7 +241,10 @@ class LibEvent implements EventInterface {
     /**
      * 启动事件监听
      */
-    public function loop() {
-        event_base_loop($this->_eventBase);
+    public function loop()
+    {
+        $this->_eventBase->loop();
     }
+
+
 }

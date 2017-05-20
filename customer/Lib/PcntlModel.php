@@ -98,11 +98,12 @@ class PcntlModel
      */
     public function __construct($maxSize = 4)
     {
-        $this->setDaemonize();
         $this->setMaxsize($maxSize);
+        /*$this->setDaemonize();
+
         $this->daemonize();
         $this->resetStd();
-        $this->installSignal();
+        $this->installSignal();*/
         //$this->monitorWorkers();
     }
 
@@ -119,7 +120,8 @@ class PcntlModel
 
     private function setMaxsize($maxSize)
     {
-        $this->MaxSize = $maxSize || $maxSize === 0 ? $maxSize : Config::MaxSize;
+        //$this->MaxSize = $maxSize || $maxSize === 0 ? $maxSize : Config::MaxSize;
+        $this->MaxSize = $maxSize;
     }
 
     public function setDaemonize()

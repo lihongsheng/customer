@@ -8,20 +8,20 @@
     <link href="/customer/public/css/style.css" rel="stylesheet">
     <!-- Include these three JS files: -->
     <script type="text/javascript" src="https://cdn.bootcss.com/jquery/2.2.3/jquery.min.js"></script>
-    <script src="/public/js/swfobject.js"></script>
-    <script src="/public/js/web_socket.js"></script>
+    <script src="/customer/public/js/swfobject.js"></script>
+    <script src="/customer/public/js/web_socket.js"></script>
 
 
     <script type="text/javascript">
         if (typeof console == "undefined") {    this.console = { log: function (msg) {  } };}
 
         var img = [
-            '/public/img/1.jpeg',
-            '/public/img/2.jpeg',
-            '/public/img/3.jpeg',
+            '/customer/public/img/1.jpeg',
+            '/customer/public/img/2.jpeg',
+            '/customer/public/img/3.jpeg',
         ];
 
-        WEB_SOCKET_SWF_LOCATION = "/public/swf/WebSocketMain.swf";
+        WEB_SOCKET_SWF_LOCATION = "/customer/public/swf/WebSocketMain.swf";
         WEB_SOCKET_DEBUG = true;
 
         var ws, name, client_list={};

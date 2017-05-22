@@ -76,7 +76,7 @@ class Work
         $this->pcntl->daemonize();
         $listen = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);
-        socket_bind($listen, '0.0.0.0', 6090);
+        socket_bind($listen, '0.0.0.0', 20072);
         socket_listen($listen);
         $this->event->add($listen, LibEvent::EV_READ,array($this,'accept'));
         Timer::init($this->event);

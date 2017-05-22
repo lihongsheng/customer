@@ -18,7 +18,7 @@ class Index extends Controller{
     public function indexAction() {
         //phpinfo();
         try {
-            echo 'hell word' . PHP_EOL;
+           // echo 'hell word' . PHP_EOL;
             $work = new Work();
             $work->run();
         }catch (\Exception $e) {

@@ -64,7 +64,6 @@ class Work
         ConnectInterface::$protocol = new WebSocket();
         ConnectInterface::$work = $this;
 
-        $this->event = new Event();
 
     }
 
@@ -78,10 +77,13 @@ class Work
         socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);
         socket_bind($listen, '0.0.0.0', 20072);
         socket_listen($listen);
+
+
+        $this->event = new Event();
         $this->event->add($listen, LibEvent::EV_READ,array($this,'accept'));
         Timer::init($this->event);
         Timer::add(30,array($this,'ping'));
-        echo (int)$listen;
+        //echo (int)$listen;
         $this->event->loop();
 
     }

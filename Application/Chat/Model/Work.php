@@ -181,10 +181,15 @@ class Work
 
     public function onClose(ConnectInterface $connect) {
         unset($this->_connect[$connect->id]);
-        unset($this->_group[$connect->id]);
+        foreach ($this->_group as $k=>$v) {
+            if($v[$connect->id]) {
+                unset($this->_group[$k][$connect->id]);
+                break;
+            }
+        }
         foreach ($this->_uid as $k=>$v) {
             if($v[$connect->id]) {
-                unset($this->_uid[$k]);
+                unset($this->_uid[$k]);break;
             }
         }
 

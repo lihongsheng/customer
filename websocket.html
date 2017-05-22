@@ -68,19 +68,20 @@
             //console.log("websocket握手成功，发送登录数据:"+JSON.stringify(login_data));
             ws.send(JSON.stringify(login_data));
             //加入组
-            setTimeout(function(){
-                var login_data = {
-                    "type":"bindGroup",
-                    "uid":uid,
-                    "name":'欢迎'+name+'加入房间',
-                    "msg":"",
-                    "sendtoid":"1"
-                };
-                ws.send(JSON.stringify(login_data));
-            },200);
-
-
+            /**/
         }
+
+        setTimeout(function(){
+            var login_data = {
+                "type":"bindGroup",
+                "uid":uid,
+                "name":name,
+                "msg":'欢迎'+name+'加入房间',
+                "sendtoid":"1"
+            };
+            console.log(login_data);
+            ws.send(JSON.stringify(login_data));
+        },1000);
 
         // 服务端发来消息时
         function onmessage(e)
@@ -92,6 +93,7 @@
                 // 服务端ping客户端
                 case 'ping':
                     ws.send('{"type":"ping","msg":""}');
+                    break;
                 case 'message':
                     say(data['uid'], data['name'],  data['msg'], data['time']);
                     break;
@@ -111,6 +113,7 @@
             var login_data = {
                 "type":"getGroup",
                 "uid":uid,
+                "name":name,
                 "msg":"",
                 "sendtoid":"1"
             };
@@ -126,8 +129,9 @@
             var login_data = {
                 "type":"message",
                 "uid":uid,
+                "name":name,
                 "msg":input.value,
-                "sendid":1
+                "sendtoid":"1"
             };
             ws.send(JSON.stringify(login_data));
             input.value = "";

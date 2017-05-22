@@ -133,7 +133,7 @@ class Work
     }
 
     public function onConnect(ConnectInterface $connect) {
-        $connect->send(json_encode(['msg'=>'你好','type'=>self::MSG_TYPE_MESSAGE]));
+        //$connect->send(json_encode(['msg'=>'你好','type'=>self::MSG_TYPE_MESSAGE]));
     }
 
     public function onMessage($message, ConnectInterface $connect) {
@@ -142,11 +142,13 @@ class Work
             case self::MSG_TYPE_BIND_GROUP:
                 $this->_group[$message['sendtoid']][$connect->id]['conn'] = $connect;
                 $this->_group[$message['sendtoid']][$connect->id]['uid'] = $message['uid'];
+                $this->_group[$message['sendtoid']][$connect->id]['name'] = $message['name'];
                 foreach ($this->_group[$message['sendtoid']] as $_conn) {
                     $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]));
                 }
                 echo self::MSG_TYPE_BIND_GROUP.':::'.json_encode($message).PHP_EOL;
                 break;
+
             case self::MSG_TYPE_MESSAGE:
                 foreach ($this->_group[$message['sendtoid']] as $_conn) {
                     $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]));
@@ -155,21 +157,24 @@ class Work
                 break;
             case self::MSG_TYPE_PING:
                 break;
+
             case self::MSG_TYPE_BIND_UID:
                 $this->_uid[$message['uid']][$connect->id] = $connect;
                 $this->_uid[$message['uid']]['name'] = $message['name'];
                 $this->_uid[$message['uid']]['uid'] = $message['uid'];
+
+                echo self::MSG_TYPE_BIND_UID.':::'.json_encode($message).PHP_EOL;
                 break;
             case self::MSG_TYPE_GET_GROUP:
                 $msg = [];
                 foreach ($this->_group as $_connect) {
                     $msg[] = [
-                        'name'=>$this->_uid[$_connect['uid']]['name'],
-                        'uid'=>$_connect['uid'],
+                        'name'=>$_connect[$connect->id]['name'],
+                        'uid'=>$_connect[$connect->id]['uid'],
                     ];
                 }
                 $connect->send(json_encode(["type"=>"group","msg"=>$msg]));
-                echo self::MSG_TYPE_GET_GROUP.':::'.json_encode($message).PHP_EOL;
+                echo self::MSG_TYPE_GET_GROUP.':::'.json_encode($msg).PHP_EOL;
         }
 
     }

@@ -133,7 +133,7 @@ class Work
     }
 
     public function onConnect(ConnectInterface $connect) {
-        $connect->send(json_encode(['mes'=>'你好']));
+        $connect->send(json_encode(['mes'=>'你好','type'=>self::MSG_TYPE_MESSAGE]));
     }
 
     public function onMessage($message, ConnectInterface $connect) {
@@ -143,12 +143,13 @@ class Work
                 $this->_group[$message['sendtoid']][$connect->id]['conn'] = $connect;
                 $this->_group[$message['sendtoid']][$connect->id]['uid'] = $message['uid'];
                 foreach ($this->_group[$message['sendtoid']] as $_conn) {
-                    $_conn->send(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg']]);
+                    $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg']]));
                 }
+
                 break;
             case self::MSG_TYPE_MESSAGE:
                 foreach ($this->_group[$message['sendtoid']] as $_conn) {
-                    $_conn->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg']]));
+                    $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg']]));
                 }
                 break;
             case self::MSG_TYPE_PING:

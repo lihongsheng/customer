@@ -55,11 +55,11 @@ class TcpConnect extends ConnectInterface
             $this->destory();
         }
         $this->resNoCount = -1;//有消息未回复次数为-1
-        if(!$this->isHandle) {
+        /*if(!$this->isHandle) {
             echo PHP_EOL.'[READ]:::'.$data.'::'.$buffer.PHP_EOL;
         } else {
             echo PHP_EOL.'[READ]:::'.$data.'::'.self::$protocol->decode($buffer).PHP_EOL;
-        }
+        }*/
 
         if(self::$protocol->isHandle() && !$this->isHandle) {
             $protocol = self::$protocol->handle($buffer);

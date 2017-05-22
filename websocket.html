@@ -87,6 +87,7 @@
         {
             //var data = eval("("+e.data+")");
             var data = JSON.parse(e.data);
+            console.log(data);
             switch(data['type']){
                 // 服务端ping客户端
                 case 'ping':

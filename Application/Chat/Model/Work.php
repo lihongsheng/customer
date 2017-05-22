@@ -145,13 +145,13 @@ class Work
                 foreach ($this->_group[$message['sendtoid']] as $_conn) {
                     $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]));
                 }
-                echo self::MSG_TYPE_BIND_GROUP.':::'.json_decode($message).PHP_EOL;
+                echo self::MSG_TYPE_BIND_GROUP.':::'.json_encode($message).PHP_EOL;
                 break;
             case self::MSG_TYPE_MESSAGE:
                 foreach ($this->_group[$message['sendtoid']] as $_conn) {
                     $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]));
                 }
-                echo self::MSG_TYPE_MESSAGE.':::'.json_decode($message).PHP_EOL;
+                echo self::MSG_TYPE_MESSAGE.':::'.json_encode($message).PHP_EOL;
                 break;
             case self::MSG_TYPE_PING:
                 break;
@@ -169,6 +169,7 @@ class Work
                     ];
                 }
                 $connect->send(json_encode(["type"=>"group","msg"=>$msg]));
+                echo self::MSG_TYPE_GET_GROUP.':::'.json_encode($message).PHP_EOL;
         }
 
     }

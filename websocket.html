@@ -91,7 +91,7 @@
             switch(data['type']){
                 // 服务端ping客户端
                 case 'ping':
-                    ws.send('{"type":"ping","message":""}');
+                    ws.send('{"type":"ping","msg":""}');
                 case 'message':
                     say(data['uid'], data['name'],  data['msg'], data['time']);
                     break;
@@ -134,25 +134,11 @@
             input.focus();
         }
 
-        // 刷新用户列表框
-        function flush_client_list(){
-            var userlist_window = $("#userlist");
-            var client_list_slelect = $("#client_list");
-            userlist_window.empty();
-            client_list_slelect.empty();
-            userlist_window.append('<h4>在线用户</h4><ul>');
-            client_list_slelect.append('<option value="all" id="cli_all">所有人</option>');
-            for(var p in client_list){
-                userlist_window.append('<li id="'+p+'">'+client_list[p]+'</li>');
-                client_list_slelect.append('<option value="'+p+'">'+client_list[p]+'</option>');
-            }
-            $("#client_list").val(select_client_id);
-            userlist_window.append('</ul>');
-        }
+
 
         // 发言
         function say(from_client_id, from_client_name, content, time){
-            $("#dialog").append('<div class="speech_item"><img src="/public/img/1.jpeg" class="user_icon" /> '+from_client_name+' <br> '+time+'<div style="clear:both;"></div><p class="triangle-isosceles top">'+content+'</p> </div>');
+            $("#dialog").append('<div class="speech_item"><img src="/customer/public/img/1.jpeg" class="user_icon" /> '+from_client_name+' <br> '+time+'<div style="clear:both;"></div><p class="triangle-isosceles top">'+content+'</p> </div>');
         }
 
         $(function(){
@@ -182,11 +168,7 @@
                 <div class="say-btn">
                     <input type="submit" class="btn btn-default" value="发表" /></div>
             </form>
-            <!--<div>
-                &nbsp;&nbsp;&nbsp;&nbsp;<b>房间列表:</b>（当前在&nbsp;房间1）<br>
-                &nbsp;&nbsp;&nbsp;&nbsp;<a href="/?room_id=1">房间1</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="/?room_id=2">房间2</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="/?room_id=3">房间3</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="/?room_id=4">房间4</a>
-                <br><br>
-            </div>-->
+
 
         </div>
         <div class="col-md-3 column">

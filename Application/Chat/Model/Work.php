@@ -77,7 +77,7 @@ class Work
         socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);
         socket_bind($listen, '0.0.0.0', 20072);
         socket_listen($listen);
-
+        $this->pcntl->resetStd();
 
         $this->event = new Event();
         $this->event->add($listen, LibEvent::EV_READ,array($this,'accept'));

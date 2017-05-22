@@ -204,7 +204,7 @@ class PcntlModel
      * 重置输出
      * @throws Exception
      */
-    protected function resetStd()
+    public function resetStd()
     {
         if (!$this->Daemonize) {
             return;

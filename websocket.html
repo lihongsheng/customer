@@ -8,9 +8,22 @@
     <link href="/customer/public/css/style.css" rel="stylesheet">
     <!-- Include these three JS files: -->
     <script type="text/javascript" src="https://cdn.bootcss.com/jquery/2.2.3/jquery.min.js"></script>
+    <script src="/public/js/swfobject.js"></script>
+    <script src="/public/js/web_socket.js"></script>
+
 
     <script type="text/javascript">
         if (typeof console == "undefined") {    this.console = { log: function (msg) {  } };}
+
+        var img = [
+            '/public/img/1.jpeg',
+            '/public/img/2.jpeg',
+            '/public/img/3.jpeg',
+        ];
+
+        WEB_SOCKET_SWF_LOCATION = "/public/swf/WebSocketMain.swf";
+        WEB_SOCKET_DEBUG = true;
+
         var ws, name, client_list={};
         var uid;
         // 连接服务端
@@ -25,7 +38,6 @@
             ws.onmessage = onmessage;
             ws.onclose = function() {
                 console.log("连接关闭，定时重连");
-                //connect();
             };
             ws.onerror = function() {
                 console.log("出现错误");
@@ -35,8 +47,7 @@
         // 连接建立时发送登录信息
         function onopen()
         {
-            if(!name)
-            {
+            if(!name) {
                 // 输入姓名
                 var alname = function(){
                     name = prompt('输入你的名字：', '');
@@ -48,80 +59,42 @@
             }
             // 绑定uid
             var login_data = {
-                "type":1,
+                "type":"bindUid",
                 "uid":uid,
                 "name":name,
                 "msg":"",
-                "sendid":""
+                "sendtoid":""
             };
-            console.log("websocket握手成功，发送登录数据:"+JSON.stringify(login_data));
+            //console.log("websocket握手成功，发送登录数据:"+JSON.stringify(login_data));
             ws.send(JSON.stringify(login_data));
             //加入组
             setTimeout(function(){
                 var login_data = {
-                    "type":3,
+                    "type":"bindGroup",
                     "uid":uid,
-                    "name":name,
+                    "name":'欢迎'+name+'加入房间',
                     "msg":"",
-                    "sendid":"1"
+                    "sendtoid":"1"
                 };
-                console.log(JSON.stringify(login_data));
                 ws.send(JSON.stringify(login_data));
             },200);
-           /* var login_data = {
-                "type":3,
-                "uid":uid,
-                "name":name,
-                "msg":"",
-                "senid":"1"
-            };
-            ws.send(JSON.stringify(login_data));*/
-            /*console.log(JSON.stringify(login_data));
-            //发送组
-            var login_data = {
-                "type":6,
-                "uid":uid,
-                "msg":name + '加入房间',
-                "senid":"1"
-            };
-            console.log(JSON.stringify(login_data));
-            ws.send(JSON.stringify(login_data));*/
-            setTimeout(function(){
-                var login_data = {
-                    "type":6,
-                    "uid":uid,
-                    "msg":name + '---加入房间',
-                    "sendid":"1"
-                };
-                console.log(JSON.stringify(login_data));
-                ws.send(JSON.stringify(login_data));
-            },500);
+
+
         }
 
         // 服务端发来消息时
         function onmessage(e)
         {
-            console.log(e.data);
             //var data = eval("("+e.data+")");
             var data = JSON.parse(e.data);
             switch(data['type']){
                 // 服务端ping客户端
-                case '1':
+                case 'ping':
+                    ws.send('{"type":"ping","message":""}');
+                case 'message':
+                    say(data['uid'], data['name'],  data['msg'], data['time']);
                     break;
-                case '2':
-                    break;
-                case '3':
-                    break;
-                case '4':
-                    break;
-                case '5': //用户消息
-                    break;
-                case '6'://用户组消息
-                    say(data['sendid'], data['uname'],  data['msg'], data['time']);
-                    //flush_client_list();
-                    //console.log(data['client_name']+"登录成功");
-                    break;
-                case '7':
+                case 'group':
                     var userlist_window = $("#userlist");
                     userlist_window.empty();
                     userlist_window.append('<h4>在线用户</h4><ul>');
@@ -135,10 +108,10 @@
 
         setInterval(function(){
             var login_data = {
-                "type":7,
+                "type":"getGroup",
                 "uid":uid,
                 "msg":"",
-                "sendid":"1"
+                "sendtoid":"1"
             };
             ws.send(JSON.stringify(login_data));
         },3500);
@@ -150,7 +123,7 @@
             var to_client_name = $("#client_list option:selected").text();
             //发送组
             var login_data = {
-                "type":6,
+                "type":"message",
                 "uid":uid,
                 "msg":input.value,
                 "sendid":1
@@ -178,7 +151,7 @@
 
         // 发言
         function say(from_client_id, from_client_name, content, time){
-            $("#dialog").append('<div class="speech_item"><img src="" class="user_icon" /> '+from_client_name+' <br> '+time+'<div style="clear:both;"></div><p class="triangle-isosceles top">'+content+'</p> </div>');
+            $("#dialog").append('<div class="speech_item"><img src="/public/img/1.jpeg" class="user_icon" /> '+from_client_name+' <br> '+time+'<div style="clear:both;"></div><p class="triangle-isosceles top">'+content+'</p> </div>');
         }
 
         $(function(){
@@ -189,6 +162,8 @@
 
             });
         });
+
+
     </script>
 </head>
 <body onload="connect();">
@@ -201,11 +176,10 @@
                 <div class="caption" id="dialog"></div>
             </div>
             <form onsubmit="onSubmit(); return false;">
-                <select style="margin-bottom:8px" id="client_list">
-                    <option data-type="g" value="1">所有人</option>
-                </select>
+
                 <textarea class="textarea thumbnail" id="textarea"></textarea>
-                <div class="say-btn"><input type="submit" class="btn btn-default" value="发表" /></div>
+                <div class="say-btn">
+                    <input type="submit" class="btn btn-default" value="发表" /></div>
             </form>
             <!--<div>
                 &nbsp;&nbsp;&nbsp;&nbsp;<b>房间列表:</b>（当前在&nbsp;房间1）<br>

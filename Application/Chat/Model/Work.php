@@ -35,6 +35,12 @@ class Work
 
     protected $_connect = [];//所有的链接
 
+    //uid
+    protected $_uid = [];
+
+    //组
+    protected $_group = [];
+
     protected $event;
 
     protected $protocol;
@@ -43,7 +49,13 @@ class Work
      * 保持心跳数据格式内容
      * @var
      */
-    protected $pingData = '{"type":"ping","message":""}';
+    protected $pingData         = '{"type":"ping","message":""}';
+    const MSG_TYPE_PING         = 'ping';
+    const MSG_TYPE_GET_GROUP    = 'getGroup';//获取组列表
+    const MSG_TYPE_BIND_UID     = 'bindUid';//消息
+    const MSG_TYPE_BIND_GROUP   = 'bindGroup';//消息
+    const MSG_TYPE_MESSAGE      = 'message';//消息
+
 
     public function __construct()
     {
@@ -125,13 +137,48 @@ class Work
     }
 
     public function onMessage($message, ConnectInterface $connect) {
-        //$message = json_decode($message,true);
-        echo "[REV] ".$message.PHP_EOL;
-        $connect->send(json_encode(['mes'=>'你好','date'=>date('Y-m-d H:i:s')]));
+        $message = json_decode($message,true);
+        switch ($message['type']) {
+            case self::MSG_TYPE_BIND_GROUP:
+                $this->_group[$message['sendtoid']][$connect->id]['conn'] = $connect;
+                $this->_group[$message['sendtoid']][$connect->id]['uid'] = $message['uid'];
+                foreach ($this->_group[$message['sendtoid']] as $_conn) {
+                    $_conn->send(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg']]);
+                }
+                break;
+            case self::MSG_TYPE_MESSAGE:
+                foreach ($this->_group[$message['sendtoid']] as $_conn) {
+                    $_conn->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg']]));
+                }
+                break;
+            case self::MSG_TYPE_PING:
+                break;
+            case self::MSG_TYPE_BIND_UID:
+                $this->_uid[$message['uid']][$connect->id] = $connect;
+                $this->_uid[$message['uid']]['name'] = $message['name'];
+                $this->_uid[$message['uid']]['uid'] = $message['uid'];
+                break;
+            case self::MSG_TYPE_GET_GROUP:
+                $msg = [];
+                foreach ($this->_group as $_connect) {
+                    $msg[] = [
+                        'name'=>$this->_uid[$_connect['uid']]['name'],
+                        'uid'=>$_connect['uid'],
+                    ];
+                }
+                $connect->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$msg]));
+        }
+
     }
 
     public function onClose(ConnectInterface $connect) {
         unset($this->_connect[$connect->id]);
+        unset($this->_group[$connect->id]);
+        foreach ($this->_uid as $k=>$v) {
+            if($v[$connect->id]) {
+                unset($this->_uid[$k]);
+            }
+        }
 
     }
 

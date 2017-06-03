@@ -68,6 +68,9 @@ class Work
     }
 
 
+    /**
+     * work运行
+     */
     public function run() {
 
 
@@ -88,41 +91,57 @@ class Work
 
     }
 
+
+    /**
+     * 添加时间
+     * @param $fd
+     * @param $flag
+     * @param $func
+     * @param null $args
+     */
     public function addEvent($fd, $flag, $func, $args = null) {
         echo 'ADDEVENT'.(int)$fd.PHP_EOL;
         $this->event->add($fd, $flag, $func, $args);
     }
 
+    /**
+     * 删除event事件
+     * @param $fd
+     * @param $flag
+     */
     public function delEvent($fd, $flag) {
         $this->event->del($fd, $flag);
     }
 
+    /**
+     * 删除链接
+     * @param $id
+     */
     public function delConnect($id) {
         unset($this->_connect[$id]);
     }
 
+
+    /**
+     * 接受客户端的Tcp链接请求
+     * @param $fd
+     */
     public function accept($fd) {
 
         $connect = new TcpConnect($fd);
         $this->_connect[$connect->id] = $connect;
 
         //call_user_func(array($this,'onConnect'),$connect);
-        echo 'ACCEPT'.$connect->id.PHP_EOL;
+        //echo 'ACCEPT'.$connect->id.PHP_EOL;
 
     }
 
 
-    public function setEvent($key,$func) {
+    /*public function setEvent($key,$func) {
 
-        /*switch ($key) {
-            case 'onProtocolClose':
-                $this->onProtocolClose = $func;
-                break;
-
-        }*/
         $this->$key = $func;
 
-    }
+    }*/
 
 
     /*protected $onProtocolClose; //协议关闭回调
@@ -134,53 +153,102 @@ class Work
 
     }
 
+    /**
+     *客户端建立链接的时候的事件
+     * @param ConnectInterface $connect
+     */
     public function onConnect(ConnectInterface $connect) {
         //$connect->send(json_encode(['msg'=>'你好','type'=>self::MSG_TYPE_MESSAGE]));
     }
 
+
+    /**
+     * 获的客户端消息的事件函数
+     * @param $message
+     * @param ConnectInterface $connect
+     */
     public function onMessage($message, ConnectInterface $connect) {
         $message = json_decode($message,true);
         switch ($message['type']) {
-            case self::MSG_TYPE_BIND_GROUP:
+
+            case self::MSG_TYPE_BIND_GROUP: //用户绑定用户组
+                /**
+                 * [组ID=>[
+                 *     'connectID'=>[
+                 *           'conn'=>ConnectInterface,
+                 *           'uid' => '用户UID',
+                 *           'name'=>'用户昵称'
+                 *      ],
+                 *      ...................
+                 *    ],
+                 *    ....................
+                 *
+                 * ]
+                 */
                 $this->_group[$message['sendtoid']][$connect->id]['conn'] = $connect;
                 $this->_group[$message['sendtoid']][$connect->id]['uid'] = $message['uid'];
                 $this->_group[$message['sendtoid']][$connect->id]['name'] = $message['name'];
+
+                //向组用户发送组内广播
                 foreach ($this->_group[$message['sendtoid']] as $_conn) {
                     $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]));
                 }
-                echo self::MSG_TYPE_BIND_GROUP.':::'.json_encode($message).PHP_EOL;
+
+                //echo self::MSG_TYPE_BIND_GROUP.':::'.json_encode($message).PHP_EOL;
                 break;
 
+                //用户组消息
             case self::MSG_TYPE_MESSAGE:
+                //向组用户发送组内广播
                 foreach ($this->_group[$message['sendtoid']] as $_conn) {
                     $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]));
                 }
-                echo self::MSG_TYPE_MESSAGE.':::'.json_encode($message).PHP_EOL;
+                //echo self::MSG_TYPE_MESSAGE.':::'.json_encode($message).PHP_EOL;
                 break;
+                //ping消息
             case self::MSG_TYPE_PING:
                 break;
 
+                //绑定用户UID消息
             case self::MSG_TYPE_BIND_UID:
+                /**
+                 * 格式
+                 * [
+                 *     '用户UID' => [
+                 *         'connectID'=>ConnectInterface,
+                 *         'UID'=>'uid',
+                 *         'name'=>'用户name'
+                 *     ]
+                 * ]
+                 */
                 $this->_uid[$message['uid']][$connect->id] = $connect;
                 $this->_uid[$message['uid']]['name'] = $message['name'];
                 $this->_uid[$message['uid']]['uid'] = $message['uid'];
 
-                echo self::MSG_TYPE_BIND_UID.':::'.json_encode($message).PHP_EOL;
+                //echo self::MSG_TYPE_BIND_UID.':::'.json_encode($message).PHP_EOL;
                 break;
+
+                //获取组成员消息
             case self::MSG_TYPE_GET_GROUP:
                 $msg = [];
-                foreach ($this->_group as $_connect) {
+                foreach ($this->_group[$message['sendtoid']] as $_connect) {
                     $msg[] = [
-                        'name'=>$_connect[$connect->id]['name'],
-                        'uid'=>$_connect[$connect->id]['uid'],
+                        'name'=>$_connect['name'],
+                        'uid'=>$_connect['uid'],
                     ];
                 }
                 $connect->send(json_encode(["type"=>"group","msg"=>$msg]));
-                echo self::MSG_TYPE_GET_GROUP.':::'.json_encode($msg).PHP_EOL;
+                //echo self::MSG_TYPE_GET_GROUP.':::'.json_encode($msg).PHP_EOL;
         }
 
     }
 
+
+
+    /**
+     * 客户端关闭链接的时候的回调函数
+     * @param ConnectInterface $connect
+     */
     public function onClose(ConnectInterface $connect) {
         unset($this->_connect[$connect->id]);
         foreach ($this->_group as $k=>$v) {
@@ -191,7 +259,8 @@ class Work
         }
         foreach ($this->_uid as $k=>$v) {
             if($v[$connect->id]) {
-                unset($this->_uid[$k]);break;
+                unset($this->_uid[$k]);
+                break;
             }
         }
 
@@ -201,6 +270,7 @@ class Work
 
 
     /**
+     * 保持客户端心跳
      * 保持心跳操作
      */
     public function ping() {

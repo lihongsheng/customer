@@ -1,20 +1,18 @@
 <?php
 /**
- * Pcntl.php
- * 进程控制类
- * 作者: 李红生 (549940183@qq.com)
- * 创建日期: 17/2/5 下午11:53
+ * MutliProcess.php
+ *
+ * 多进程管理
+ * 作者: 李红生 (54991083@qq.com)
+ * 创建日期: 17/6/26 下午10:38
  * 修改记录:
  *
  * $Id$
  */
 namespace customer\Lib;
 
-use customer\Lib\Config;
-
-class PcntlModel
+class MutliProcess
 {
-
     /**
      * 启动状态
      *
@@ -65,6 +63,7 @@ class PcntlModel
      */
     private $works = [];
 
+
     /**
      * 子进程工作方法
      * @var string
@@ -85,53 +84,110 @@ class PcntlModel
 
 
     /**
-     * 重定向输出的文件
+     * 标准重定向输出的文件
      * @var string
      */
     protected $StdoutFile = '/tmp/pcntl.log';
 
+
+
+    /**
+     * 存储PID文件的地方
+     * @var string
+     */
+    protected $PidFile = '/tmp/multiWork.pid';
 
     /**
      * @param int $maxSize
      * @throws Exception
      * @throws \Exception
      */
-    public function __construct($maxSize = 4)
+    public function __construct($maxSize = 4,$daemonize = false)
     {
+        //设置最大启动的子进程数
         $this->setMaxsize($maxSize);
-        /*$this->setDaemonize();
-
+        //是否变成守护进程
+        $this->setDaemonize($daemonize);
+        //是否变成守护进程
         $this->daemonize();
+        //重定向输出，标准输出(echo,var_*,error,输出到文件)
+        $this->resetStd();
+        $this->setProcessTitle("work::master");
+
+
+        /*
         $this->resetStd();
         $this->installSignal();*/
         //$this->monitorWorkers();
     }
 
+
+
     /**
-     * 设置子进程工作
-     * @param $work
-     * @param $run
+     * 设置进程名字
+     *
+     * @param string $title
+     * @return void
      */
-    public function setWork($work, $run)
+    protected  function setProcessTitle($title)
     {
-        $this->work    = $work;
-        $this->workRun =  $run;
+
+        cli_set_process_title($title);
+        //        if (function_exists('cli_set_process_title')) {
+        //            @cli_set_process_title($title);
+        //        }
+        //        elseif (extension_loaded('proctitle') && function_exists('setproctitle')) {
+        //            @setproctitle($title);
+        //        }
     }
 
+
+
+    /**
+     * 外部状态处理
+     * 如 stop,restart,start,reload
+     */
+    protected function statusHandle() {
+        $status = $_SERVER['argv'][1] ? $_SERVER['argv'][1] : $argv[1];
+        switch ($status) {
+            case "stop":
+                $this->stop();
+                break;
+            case "start":
+                $this->start();
+                break;
+            case "restart":
+                $this->retart();
+            case "reload":
+                $this->reload();
+
+            default:
+                throw new \Exception("未知的状态,support stop,restart,start,reload");
+        }
+    }
+
+
+    /**
+     * 设置最大进程数
+     * @param $maxSize
+     */
     private function setMaxsize($maxSize)
     {
-        //$this->MaxSize = $maxSize || $maxSize === 0 ? $maxSize : Config::MaxSize;
         $this->MaxSize = $maxSize;
     }
 
-    public function setDaemonize()
+    /**
+     * @param $daemonize
+     */
+    public function setDaemonize($daemonize)
     {
-        $this->Daemonize = Config::Daemonize;
+        $this->Daemonize = $daemonize;
     }
+
 
     /**
      * 进程守护
-	*/
+     */
     public function daemonize()
     {
         if(!$this->Daemonize) {
@@ -158,50 +214,6 @@ class PcntlModel
     }
 
 
-
-    //运行子进程程序
-    public function start() {
-
-        $i = 0;
-        while ($i<$this->MaxSize) {
-            $i++;
-            $pid = pcntl_fork();
-            if($pid === 0) {
-               $this->forkWork();
-            } else if ($pid === -1) {
-                if($i>0) {
-                    $i--;
-                }
-            }
-            //子进程ID
-            $this->works[$pid] = $pid;
-        }
-        //主进程ID
-        $this->MasterId = posix_getpid();
-        $this->monitorWorkers();
-
-    }
-
-    /**
-     * 子进程工作启动
-     */
-    private function forkWork() {
-        $run = $this->workRun;
-        $this->work->$run();
-        $pid = posix_getpid();
-        $this->reinstallSignal();
-    }
-
-    protected function forkOne() {
-        $pid = pcntl_fork();
-        if($pid === -1){
-            throw new Exception("forkOneWorker fail ON LINE ".__LINE__);
-        } else if($pid === 0) {
-            $this->forkWork();
-        }
-        $this->works[$pid] = $pid;
-    }
-
     /**
      * 重置输出
      * @throws Exception
@@ -225,7 +237,6 @@ class PcntlModel
     }
 
 
-
     /**
      * 注册信号处理函数
      *
@@ -233,30 +244,36 @@ class PcntlModel
      */
     protected function installSignal()
     {
-        // stop
+        //
         pcntl_signal(SIGINT, array($this, 'signalHandler'), false);
-        // reload
+        // 用户自定义信号
         pcntl_signal(SIGUSR1, array($this, 'signalHandler'), false);
-        // status
+        //  用户自定义信号
         pcntl_signal(SIGUSR2, array($this, 'signalHandler'), false);
         // ignore
-        pcntl_signal(SIGPIPE, SIG_IGN, false);
+        //pcntl_signal(SIGPIPE, SIG_IGN, false);
     }
 
 
     /**
-     * 重新注册信号处理函数
+     * 重装信号处理函数
+     * 如果子进程有自己的处理方式，需要重装信号处理函数
      *
+     * @return void
      */
-    protected function reinstallSignal()
+    protected function reInstallSignal()
     {
-        // uninstall stop signal handler
+        // 取消父进程注册的信号处理函数
         pcntl_signal(SIGINT, SIG_IGN, false);
-        // uninstall reload signal handler
         pcntl_signal(SIGUSR1, SIG_IGN, false);
-        // uninstall  status signal handler
         pcntl_signal(SIGUSR2, SIG_IGN, false);
+        //pcntl_signal(SIGPIPE, SIG_IGN, false);
+        //调用子类自己的信号管理函数
+        $this->work->installSignal();
+
     }
+
+
 
     /**
      * 信号处理
@@ -268,87 +285,75 @@ class PcntlModel
         switch ($signal) {
             // Stop.
             case SIGINT:
-                $this->stopAll();
+                $this->stop();
                 break;
             // Reload.
             case SIGUSR1:
-                $this->reload();
+                //$this->reload();
                 break;
             // Show status.
             case SIGUSR2:
-                $this->writeStatisticsToStatusFile();
+                //$this->writeStatisticsToStatusFile();
                 break;
         }
     }
 
 
     /**
-     * 重启任务
+     * 子进程工作启动
      */
-    protected function reload()
-    {
-
+    private function forkWork() {
+        //$run = $this->workRun;
+        $this->work->run();
+        $pid = posix_getpid();
+        $this->reinstallSignal();
     }
 
-    /**
-     * 写入状态
-     */
-    protected function writeToStatusFile()
-    {
-
-    }
-
-
-    /**
-     * 停止所有的任务
-     *
-     * @return void
-     */
-    public function stopAll()
-    {
-        $this->Status = PcntlModel::STATUS_SHUTDOWN;
-
-        if(!empty($this->works)) {
-            foreach($this->works as $val) {
-                posix_kill($val,SIGINT);
-            }
+    protected function forkOne() {
+        $pid = pcntl_fork();
+        if($pid === -1){
+            throw new Exception("forkOneWorker fail ON LINE ".__LINE__);
+        } else if($pid === 0) {
+            $this->forkWork();
         }
-        $this->exitAndClearAll();
-
+        //存储所有的子进程 ID
+        $this->works[$pid] = $pid;
     }
 
 
-
-
-
+    /**
+     *
+     * @throws \Exception
+     */
     public function monitorWorkers()
     {
 
         while (1) {
             //等待信号处理器
             pcntl_signal_dispatch();
-            $status = 0;
-            $pid    = pcntl_wait($status, WUNTRACED); //子进程已经退出并且其状态未报告时返回
+            $status = -1;
+            $pid    = pcntl_wait($status, WNOHANG); //子进程已经退出并且其状态未报告时返回
 
             pcntl_signal_dispatch();
             // 如果一个子进程已经退出
             if ($pid > 0 && $this->MaxSize) {
-                if ($this->Status !== PcntlModel::STATUS_SHUTDOWN) {
+                //如果不是不是stop状态
+                if ($this->Status !== self::STATUS_SHUTDOWN) {
                     if($this->works[$pid]) {
                         unset($this->works[$pid]);
                         $this->forkOne();
                         if ($status !== 0) {
-                           // $this->log("worker[:$pid] exit with status $status");
+                            // $this->log("worker[:$pid] exit with status $status");
                             throw new \Exception("worker[:$pid] exit with status $status");
                         }
                     }
                 } else {
-                    $this->exitAndClearAll();
+                    //$this->exitAndClearAll();
                 }
             } else {
                 // 主进程shutdown并且子进程全部exit
-                if ($this->Status === PcntlModel::STATUS_SHUTDOWN && empty($this->works)) {
-                    self::exitAndClearAll();
+                if ($this->Status === self::STATUS_SHUTDOWN && empty($this->works)) {
+                    $this->exitAndClearAll();
                 }
             }
             //主进程工作ID
@@ -358,6 +363,34 @@ class PcntlModel
         }
 
     }
+
+
+    /**
+     * 停止进程
+     */
+    public function stop() {
+
+        $this->Status = self::STATUS_SHUTDOWN;
+        $this->stopAllChild();
+        /**
+         * 做一些清理工作
+         */
+    }
+
+
+
+
+    /**
+     * 停止子进程
+     */
+    protected function stopAllChild() {
+            if(!empty($this->works)) {
+                foreach($this->works as $val) {
+                    posix_kill($val,SIGINT);
+                }
+            }
+    }
+
 
     /**
      *
@@ -369,7 +402,38 @@ class PcntlModel
     }
 
 
+    //运行子进程程序
+    public function start() {
+
+        $i = 0;
+        while ($i<$this->MaxSize) {
+            $i++;
+            $pid = pcntl_fork();
+            if($pid === 0) {
+                $this->forkWork();
+            } else if ($pid === -1) {
+                if($i>0) {
+                    $i--;
+                }
+            }
+            //子进程ID
+            $this->works[$pid] = $pid;
+        }
+        //主进程ID
+        $this->MasterId = posix_getpid();
+        $this->monitorWorkers();
+
+    }
 
 
+    /**
+     * 设置子进程工作
+     * @param $work
+     */
+    public function setWork($work)
+    {
+        $this->work    = $work;
+        //$this->workRun =  $run;
+    }
 
 }

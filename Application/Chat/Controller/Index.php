@@ -12,6 +12,8 @@ namespace Chat\Controller;
 
 use Chat\Model\Work;
 use customer\Lib\Controller;
+use Chat\Model\MultiWork;
+use customer\Lib\MutliProcess;
 
 class Index extends Controller{
 
@@ -24,5 +26,15 @@ class Index extends Controller{
         }catch (\Exception $e) {
             echo $e->getMessage();
         }
+    }
+
+
+
+    public function workAction() {
+
+        $work = new MutliProcess(4);
+        $workModel = new MultiWork();
+        $work->setWork($workModel);
+        $work->start();
     }
 }

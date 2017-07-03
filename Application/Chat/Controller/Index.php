@@ -10,6 +10,7 @@
  */
 namespace Chat\Controller;
 
+use Chat\Model\TextWork;
 use Chat\Model\Work;
 use customer\Lib\Controller;
 use Chat\Model\MultiWork;
@@ -36,5 +37,17 @@ class Index extends Controller{
         $workModel = new MultiWork();
         $work->setWork($workModel);
         $work->start();
+    }
+
+
+    public function indexTextAction() {
+        //phpinfo();
+        try {
+            // echo 'hell word' . PHP_EOL;
+            $work = new TextWork();
+            $work->run();
+        }catch (\Exception $e) {
+            echo $e->getMessage();
+        }
     }
 }

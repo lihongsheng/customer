@@ -23,6 +23,114 @@ class WebSocket extends Protocol
     }
 
 
+    public function input($buffer, ConnectInterface $connect) {
+
+        $bufferLen = str_replace($buffer);
+        if($bufferLen < 2) {
+            return 0;
+        }
+        //获取第一字符（8个bit位）
+        $firstbyte = ord($buffer[0]);
+        //右移位 获取第一个bit位的fin码
+        $fin       = $firstbyte >> 7;
+        //获取后四个字节的opcode
+        $opcode    = $firstbyte & 0xf;//与 10000000 相与
+
+        //获取第二个字符（8个bit位）
+        $secondbyte  = ord($buffer[1]);
+        //获取masked是否需要编码
+        $masked      = $secondbyte >> 7;
+
+        //获取 数据位长度
+        $dataLen     = $secondbyte & 127; //与 01111111 相与
+
+        switch ($opcode) {
+        //x0表示是延续frame；x1表示文本frame；x2表示二进制frame；x3-7保留给非控制frame；x8表示关 闭连接；x9表示ping；xA表示pong；xB-F保留给控制frame
+            //continue frame
+            case 0x0:
+                break;
+            // Blob type.
+            case 0x1:
+                break;
+            // Arraybuffer type.
+            case 0x2:
+                break;
+            // Close package.
+            case 0x8:
+                $connect->close();
+                return 0;
+                //ping
+            case 0x9:
+                $connect->send(pack('H*', '8a00'), true);
+                if (!$dataLen) {
+                    $headLen = $masked ? 6 : 2;
+
+                    if ($bufferLen > $headLen) {
+                        $connect->setRecv(substr($buffer,$headLen));
+                    }
+                    return 0;
+                }
+                break;
+            // Pong package.处理对于ping数据回复
+            case 0xa:
+                if (!$dataLen) {
+                    $headLen = $masked ? 6 : 2;
+
+                    if ($bufferLen > $headLen) {
+                        $connect->setRecv(substr($buffer,$headLen));
+                    }
+                    return 0;
+                }
+        }
+
+        $headLen = 6;//一般前六个字符未协议头
+        if($dataLen == 126) {
+            $headLen = 8;
+            //数据接收一半，继续接受
+            if ($headLen > $bufferLen) {
+                return 0;
+            }
+            $pack     = unpack('nn/ntotal_len', $buffer);
+            //实际data长度
+            $dataLen = $pack['total_len'];
+        } else {
+            if($dataLen == 127) {
+                $headLen = 14;
+                //数据接收一半，继续接受
+                if ($headLen > $bufferLen) {
+                    return 0;
+                }
+                $arr      = unpack('n/N2c', $buffer);
+                //实际data长度
+                $dataLen = $arr['c1']*4294967296 + $arr['c2'];
+            }
+        }
+
+        //frame长度
+        $currentLen = $headLen + $dataLen;
+        //数据未接受完毕
+        if($currentLen > $bufferLen) {
+            return 0;
+        }
+
+        if($currentLen <= $bufferLen) {
+            //最后一个包
+            if($fin) {
+                return $currentLen;
+            } else {
+                $tmpBuffer = substr($buffer,0,$currentLen);
+                $connect->setRecv(substr($buffer,$headLen));
+                $tmpData = $this->decode($tmpBuffer);
+                $connect->setTmpData($tmpData);
+            }
+
+
+        }
+
+
+    }
+
+
     /*
     *发送WS协议，建立WS协议链接
     *@param string WS发送的请求协议内容
@@ -72,21 +180,7 @@ class WebSocket extends Protocol
         return $data;
     }
 
-    /**信息编码
-     * @param string $msg
-     * @return string
-     */
-    public function encode_old($msg)
-    {
-        $msg = preg_replace(array('/\r$/','/\n$/','/\r\n$/',), '', $msg);
-        $frame = array();
-        $frame[0] = '81';
-        $len = mb_strlen($msg);
-        $frame[1] = $len<16?'0'.dechex($len):dechex($len);
-        $frame[2] = $this->ordHex($msg);
-        $data = implode('',$frame);
-        return pack("H*", $data);
-    }
+
 
     public function encode($buffer)
     {

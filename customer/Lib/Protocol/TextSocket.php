@@ -9,40 +9,72 @@
  * $Id$
  */
 
+
+
+
+
 namespace customer\Lib\Protocol;
 
-use Protocol;
+use customer\Lib\Connect\ConnectInterface;
+
+use customer\Lib\Protocol\Protocol;
 
 class TextSocket extends Protocol
 {
 
+    public function __construct() {
 
-    public static function handshake($buffer)
+        $this->ishandle = false;
+    }
+
+
+
+
+    public  function handle($buffer)
     {
 
-        return '';
+
     }
+
+
+    /**
+     *
+     * @param $buffer
+     * @param ConnectInterface $connect
+     */
+    public function input($buffer,ConnectInterface $connect) {
+        $pos = strpos($buffer, "\n");
+        if($pos === false) {
+            return 0;
+        }
+
+        return $pos+1;
+    }
+
 
     /**
      * @param $buffer
      * @return string
      */
-    public static function decode($buffer)
+    public  function decode($buffer)
     {
-        return $buffer;
+        return str_replace("\n","#",$buffer);
     }
 
     /**信息编码
      * @param string $msg
      * @return string
      */
-    public static function encode($msg)
+    public  function encode($msg)
     {
-        return $msg;
+        return $msg."\n";
     }
 
-    public static function isProtocol($buffer) {
-
+    /**
+     * @return bool
+     */
+    public function isHandle() {
+        return $this->ishandle;
     }
 
 }

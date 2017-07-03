@@ -36,6 +36,11 @@ class TcpConnect extends ConnectInterface
     protected $_eventFlag;
 
 
+    protected $_recv = '';
+
+    protected $_tmpData = '';
+
+
     public function __construct($fd)
     {
         $this->_fd = socket_accept($fd);
@@ -46,6 +51,15 @@ class TcpConnect extends ConnectInterface
     }
 
 
+    public function setRecv($buffer){
+        $this->_recv = $buffer;
+    }
+
+
+    public function setTmpData($tmpData) {
+        $this->_tmpData = $tmpData;
+    }
+
 
     public function Read($fd) {
         $buffer = '';
@@ -55,11 +69,10 @@ class TcpConnect extends ConnectInterface
             $this->destory();
         }
         $this->resNoCount = -1;//有消息未回复次数为-1
-        /*if(!$this->isHandle) {
-            echo PHP_EOL.'[READ]:::'.$data.'::'.$buffer.PHP_EOL;
-        } else {
-            echo PHP_EOL.'[READ]:::'.$data.'::'.self::$protocol->decode($buffer).PHP_EOL;
-        }*/
+
+        if($buffer == '') {
+            return;
+        }
 
         if(self::$protocol->isHandle() && !$this->isHandle) {
             $protocol = self::$protocol->handle($buffer);
@@ -68,15 +81,38 @@ class TcpConnect extends ConnectInterface
             $this->isHandle = true;
             call_user_func(array(self::$work,'onConnect'),$this);
         } else {
-            $buffer = self::$protocol->decode($buffer);
-            call_user_func(array(self::$work,'onMessage'),$buffer,$this);
+            $this->_recv .= $buffer;
+            while (true) {
+                $tmpLen = self::$protocol->input($this->_recv,$this);
+                $tmpStr = '';
+                if($tmpLen === 0) {
+                    break;
+                } else {
+                    $tmpStr = substr($this->_recv,0,$tmpLen);
+                    $this->_recv = substr($this->_recv,$tmpLen);
+                }
+                //$buffer = self::$protocol->decode($buffer);
+                if($tmpStr) {
+                    echo $tmpStr;
+                    $decodeData = $this->_tmpData . self::$protocol->decode($tmpStr);
+                    $this->_tmpData = '';
+                    call_user_func(array(self::$work,'onMessage'),$decodeData,$this);
+                }
+
+            }
+
         }
         return;
     }
 
     public function send($buffer) {
         $buffer = self::$protocol->encode($buffer);
-        socket_write($this->_fd,$buffer,strlen($buffer));
+        $isSend = socket_write($this->_fd,$buffer,strlen($buffer));
+        //判断是否写入成功
+        if($isSend === false) {
+            echo 'close form read'.socket_strerror(socket_last_error());
+            $this->destory();
+        }
     }
 
 
@@ -86,10 +122,10 @@ class TcpConnect extends ConnectInterface
         self::$work->delConnect($this->id);
 
         if (method_exists(self::$work, 'onClose')) {
-            call_user_func(array(self::$work,'onClose'),array($this));
+            call_user_func_array(array(self::$work,'onClose'),array($this));
         }
         if (method_exists(self::$work, 'onProtocolClose')) {
-            call_user_func(array(self::$work,'onProtocolClose'),array($this));
+            call_user_func_array(array(self::$work,'onProtocolClose'),array($this));
         }
         socket_close($this->_fd);
     }

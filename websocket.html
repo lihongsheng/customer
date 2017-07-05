@@ -69,9 +69,7 @@
             ws.send(JSON.stringify(login_data));
             //加入组
             /**/
-        }
 
-        setTimeout(function(){
             var login_data = {
                 "type":"bindGroup",
                 "uid":uid,
@@ -81,7 +79,19 @@
             };
             console.log(login_data);
             ws.send(JSON.stringify(login_data));
-        },1000);
+        }
+
+       /* setTimeout(function(){
+            var login_data = {
+                "type":"bindGroup",
+                "uid":uid,
+                "name":name,
+                "msg":'欢迎'+name+'加入房间',
+                "sendtoid":"1"
+            };
+            console.log(login_data);
+            ws.send(JSON.stringify(login_data));
+        },1000);*/
 
         // 服务端发来消息时
         function onmessage(e)

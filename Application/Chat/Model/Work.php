@@ -46,6 +46,11 @@ class Work
     protected $protocol;
 
     /**
+     * @var
+     */
+    protected $listen;
+
+    /**
      * 保持心跳数据格式内容
      * @var
      */
@@ -57,16 +62,36 @@ class Work
     const MSG_TYPE_MESSAGE      = 'message';//消息
 
 
-    public function __construct()
+    public function __construct($listen)
     {
 
-        $this->pcntl = new PcntlModel(0);
+       // $this->pcntl = new PcntlModel(0);
         ConnectInterface::$protocol = new WebSocket();
         ConnectInterface::$work = $this;
+        $this->listen = $listen;
 
 
     }
 
+
+    /**
+     * 设置进程名字
+     *
+     * @param string $title
+     * @return void
+     */
+    protected  function setProcessTitle($title)
+    {
+        cli_set_process_title($title);
+    }
+
+    /**
+     * 信号注册函数
+     */
+    public function installSignal()
+    {
+
+    }
 
     /**
      * work运行
@@ -74,16 +99,20 @@ class Work
     public function run() {
 
 
-        $this->pcntl->setDaemonize();
+        /*$this->pcntl->setDaemonize();
         $this->pcntl->daemonize();
         $listen = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);
         socket_bind($listen, '0.0.0.0', 20072);
         socket_listen($listen);
-        $this->pcntl->resetStd();
+        $this->pcntl->resetStd();*/
+
+        /****--------new-------****/
+        $this->setProcessTitle("work:listen");
+        /****--------end----------****/
 
         $this->event = new Event();
-        $this->event->add($listen, LibEvent::EV_READ,array($this,'accept'));
+        $this->event->add($this->listen, LibEvent::EV_READ,array($this,'accept'));
         Timer::init($this->event);
         Timer::add(30,array($this,'ping'));
         //echo (int)$listen;
@@ -158,6 +187,7 @@ class Work
      * @param ConnectInterface $connect
      */
     public function onConnect(ConnectInterface $connect) {
+        echo "connet is aleardy".PHP_EOL;
         //$connect->send(json_encode(['msg'=>'你好','type'=>self::MSG_TYPE_MESSAGE]));
     }
 
@@ -191,7 +221,7 @@ class Work
 
                 //向组用户发送组内广播
                 foreach ($this->_group[$message['sendtoid']] as $_conn) {
-                    $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]));
+                    $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'].":::".posix_getpid(),'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]));
                 }
 
                 //echo self::MSG_TYPE_BIND_GROUP.':::'.json_encode($message).PHP_EOL;

@@ -55,7 +55,7 @@ class MutliProcess
     /**masterId 主进程ID
      * $var int
      */
-    private $MasterId;
+    public $MasterId;
 
     /**
      * work进程

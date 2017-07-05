@@ -13,6 +13,8 @@ namespace customer\Lib\Protocol;
 
 
 
+use customer\Lib\Connect\ConnectInterface;
+use customer\Lib\Connect\TcpConnect;
 use customer\Lib\Protocol\Protocol;
 
 class WebSocket extends Protocol
@@ -25,10 +27,14 @@ class WebSocket extends Protocol
 
     public function input($buffer, ConnectInterface $connect) {
 
-        $bufferLen = str_replace($buffer);
+        echo "websocket start".PHP_EOL;
+        $bufferLen = strlen($buffer);
         if($bufferLen < 2) {
+            echo "2:::: ".$this->decode($buffer).PHP_EOL;
             return 0;
         }
+
+        echo "websocket protocol start ".PHP_EOL;
         //获取第一字符（8个bit位）
         $firstbyte = ord($buffer[0]);
         //右移位 获取第一个bit位的fin码
@@ -83,6 +89,8 @@ class WebSocket extends Protocol
                 }
         }
 
+        echo " websocket    parse".PHP_EOL;
+
         $headLen = 6;//一般前六个字符未协议头
         if($dataLen == 126) {
             $headLen = 8;
@@ -116,11 +124,13 @@ class WebSocket extends Protocol
         if($currentLen <= $bufferLen) {
             //最后一个包
             if($fin) {
+                echo "currentLen ".$currentLen.PHP_EOL;
                 return $currentLen;
             } else {
                 $tmpBuffer = substr($buffer,0,$currentLen);
                 $connect->setRecv(substr($buffer,$headLen));
                 $tmpData = $this->decode($tmpBuffer);
+                echo "tmpData ".$tmpData.PHP_EOL;
                 $connect->setTmpData($tmpData);
             }
 
@@ -180,6 +190,38 @@ class WebSocket extends Protocol
         return $data;
     }
 
+
+
+    /**
+     * Websocket decode.
+     *
+     * @param string              $buffer
+     * @param ConnectionInterface $connection
+     * @return string
+     */
+    public function _decode($buffer)
+    {
+        $masks = $data = $decoded = null;
+        $len = ord($buffer[1]) & 127;
+        if ($len === 126) {
+            $masks = substr($buffer, 4, 4);
+            $data  = substr($buffer, 8);
+        } else {
+            if ($len === 127) {
+                $masks = substr($buffer, 10, 4);
+                $data  = substr($buffer, 14);
+            } else {
+                $masks = substr($buffer, 2, 4);
+                $data  = substr($buffer, 6);
+            }
+        }
+        for ($index = 0; $index < strlen($data); $index++) {
+            $decoded .= $data[$index] ^ $masks[$index % 4];
+        }
+
+        return $decoded;
+
+    }
 
 
     public function encode($buffer)

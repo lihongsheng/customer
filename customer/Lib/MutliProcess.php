@@ -309,10 +309,21 @@ class MutliProcess
         $this->reinstallSignal();
     }
 
+
+    /**
+     * 创建一个新进程
+     */
     protected function forkOne() {
         $pid = pcntl_fork();
         if($pid === -1){
-            throw new Exception("forkOneWorker fail ON LINE ".__LINE__);
+            if(count($this->works)) {
+                echo "forkOneWorker fail ON LINE ".__LINE__;
+            } else {
+                //throw new Exception("forkOneWorker fail ON LINE " . __LINE__);
+                echo "no child pcntl and forkOneWorker fail ON LINE " . __LINE__;
+                exit(0);
+            }
+
         } else if($pid === 0) {
             $this->forkWork();
         }

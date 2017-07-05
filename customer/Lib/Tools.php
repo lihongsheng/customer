@@ -12,6 +12,8 @@ namespace customer\Lib;
 
 class Tools
 {
+
+
     /**
      * 判断是否来之命令行
      * @return bool
@@ -21,6 +23,14 @@ class Tools
         return (PHP_SAPI === 'cli' OR defined('STDIN'));
     }
 
+
+
+    /**
+     * 去除空白符
+     * @param $str
+     * @param bool $url_encoded
+     * @return mixed
+     */
     public static function removeInvisibleCharacters($str, $url_encoded = TRUE)
     {
         $non_displayables = array();

@@ -47,29 +47,8 @@ class Index extends Controller{
     }
 
 
-    /**
-     * 测试多进程工作
-     */
-    public function workAction() {
-
-        $work = new MutliProcess(4);
-        $workModel = new MultiWork();
-        $work->setWork($workModel);
-        $work->start();
-    }
 
 
-    /**
-     * 测试 text协议（以换行符分割）
-     */
-    public function indexTextAction() {
-        //phpinfo();
-        try {
-            // echo 'hell word' . PHP_EOL;
-            $work = new TextWork();
-            $work->run();
-        }catch (\Exception $e) {
-            echo $e->getMessage();
-        }
-    }
+
+
 }

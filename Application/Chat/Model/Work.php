@@ -10,14 +10,16 @@
  */
 namespace Chat\Model;
 
-use customer\Lib\PcntlModel;
+
 
 use customer\Lib\Connect\ConnectInterface;
 
+use customer\Lib\Db\RedisModel;
 use customer\Lib\Protocol\WebSocket;
 
 use customer\Lib\Connect\TcpConnect;
 
+use customer\Lib\RedisQueue;
 use customer\Lib\Timer;
 
 use customer\Lib\Events\LibEvent;
@@ -28,10 +30,7 @@ use customer\Lib\Events\Event;
 class Work
 {
 
-    /**
-     * @var customer\Lib\PcntlModel
-     */
-    private $pcntl;
+
 
     protected $_connect = [];//所有的链接
 
@@ -60,12 +59,28 @@ class Work
     const MSG_TYPE_BIND_UID     = 'bindUid';//消息
     const MSG_TYPE_BIND_GROUP   = 'bindGroup';//消息
     const MSG_TYPE_MESSAGE      = 'message';//消息
+    /**
+     * @var RedisQueue
+     */
+    protected $queue;
+    /**
+     * @var \redis
+     */
+    protected $redis;
+    /**
+     * @var
+     */
+    protected $pid;
 
 
+    protected $masterLink;
+    /**
+     * Work constructor.
+     * @param $listen
+     */
     public function __construct($listen)
     {
 
-       // $this->pcntl = new PcntlModel(0);
         ConnectInterface::$protocol = new WebSocket();
         ConnectInterface::$work = $this;
         $this->listen = $listen;
@@ -98,26 +113,61 @@ class Work
      */
     public function run() {
 
-
-        /*$this->pcntl->setDaemonize();
-        $this->pcntl->daemonize();
-        $listen = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-        socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);
-        socket_bind($listen, '0.0.0.0', 20072);
-        socket_listen($listen);
-        $this->pcntl->resetStd();*/
-
-        /****--------new-------****/
         $this->setProcessTitle("work:listen");
-        /****--------end----------****/
 
+        //
+        $this->redis = RedisModel::getRedis();
+        $this->queue = new RedisQueue();
+
+        $this->pid = posix_getpid();
         $this->event = new Event();
+
+        /**
+         *
+         */
+        $this->masterToLink();
+        $this->event->add($this->masterLink, LibEvent::EV_READ,array($this,'masterMsg'));
+
         $this->event->add($this->listen, LibEvent::EV_READ,array($this,'accept'));
         Timer::init($this->event);
         Timer::add(30,array($this,'ping'));
-        //echo (int)$listen;
         $this->event->loop();
 
+    }
+
+
+    protected function masterToLink() {
+        $this->masterLink  = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+        socket_connect($this->masterLink,'127.0.0.1',20073);
+    }
+
+
+    /**
+     * 处理主进程发过来的信息
+     * @param $fd
+     */
+    public function masterMsg($fd) {
+        $data = socket_recv($fd,$buffer,2048,0);
+
+        if($data < 0) {
+            $this->masterToLink();
+            $msg = json_encode(['type'=>'bind','pid'=>$this->pid]);
+            socket_write($this->masterLink,$msg,strlen($msg));
+            $this->event->del($fd, LibEvent::EV_READ);
+            $this->event->add($this->masterLink, LibEvent::EV_READ,array($this,'masterMsg'));
+        }
+        //解析text协议
+        while(true) {
+            $pos = strpos($buffer, "\n");
+            if($pos === false) {
+                break;
+            }
+            $tmp = substr($buffer,0,$pos+1);
+            $tmp = json_encode($tmp);
+            /*if($tmp['type'] = 'bind') {
+                $this->pidMapChild[$tmp['pid']] = $id;
+            }*/
+        }
     }
 
 
@@ -129,7 +179,7 @@ class Work
      * @param null $args
      */
     public function addEvent($fd, $flag, $func, $args = null) {
-        echo 'ADDEVENT'.(int)$fd.PHP_EOL;
+        //echo 'ADDEVENT'.(int)$fd.PHP_EOL;
         $this->event->add($fd, $flag, $func, $args);
     }
 
@@ -215,13 +265,19 @@ class Work
                  *
                  * ]
                  */
-                $this->_group[$message['sendtoid']][$connect->id]['conn'] = $connect;
+                /*$this->_group[$message['sendtoid']][$connect->id]['conn'] = $connect;
                 $this->_group[$message['sendtoid']][$connect->id]['uid'] = $message['uid'];
-                $this->_group[$message['sendtoid']][$connect->id]['name'] = $message['name'];
-
-                //向组用户发送组内广播
-                foreach ($this->_group[$message['sendtoid']] as $_conn) {
-                    $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'].":::".posix_getpid(),'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]));
+                $this->_group[$message['sendtoid']][$connect->id]['name'] = $message['name'];*/
+                $uids = $this->redis->smembers();
+                $uids[] = $message['uid'];
+                $this->redis->sAdd($message['sendtoid'],$message['uid']);
+                foreach ($uids as $v) {
+                    if($this->_uid[$v]) {
+                        $msg = json_encode(["type" => self::MSG_TYPE_MESSAGE, "msg" => $message['msg'] . ":::" . posix_getpid(), 'uid' => $message['uid'], 'name' => $message['name'], 'time' => date('Y-m-d H:i:s')]);
+                        $this->_uid[$v]['conn']->send($msg);
+                    } else {
+                        $this->queue->send($msg);
+                    }
                 }
 
                 //echo self::MSG_TYPE_BIND_GROUP.':::'.json_encode($message).PHP_EOL;
@@ -229,10 +285,17 @@ class Work
 
                 //用户组消息
             case self::MSG_TYPE_MESSAGE:
-                //向组用户发送组内广播
-                foreach ($this->_group[$message['sendtoid']] as $_conn) {
-                    $_conn['conn']->send(json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]));
+
+                $uids = $this->redis->smembers();
+                foreach ($uids as $v) {
+                    if($this->_uid[$v]) {
+                        $msg = json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]);
+                        $this->_uid[$v]['conn']->send($msg);
+                    } else {
+                        $this->queue->send($msg);
+                    }
                 }
+
                 //echo self::MSG_TYPE_MESSAGE.':::'.json_encode($message).PHP_EOL;
                 break;
                 //ping消息
@@ -251,22 +314,30 @@ class Work
                  *     ]
                  * ]
                  */
-                $this->_uid[$message['uid']][$connect->id] = $connect;
+                $this->_uid[$message['uid']]['conn'] = $connect;
                 $this->_uid[$message['uid']]['name'] = $message['name'];
-                $this->_uid[$message['uid']]['uid'] = $message['uid'];
-
+                $this->_uid[$message['uid']]['uid']  = $message['uid'];
+                //存入REDIS
+                $this->redis->HSET($message['uid'],[
+                    'conn'=>$connect->id,
+                    "name"=>$message['name'],
+                    "IP"  =>'127.0.0.1',
+                    "pid" =>$this->pid,
+                ]);
                 //echo self::MSG_TYPE_BIND_UID.':::'.json_encode($message).PHP_EOL;
                 break;
 
                 //获取组成员消息
             case self::MSG_TYPE_GET_GROUP:
                 $msg = [];
-                foreach ($this->_group[$message['sendtoid']] as $_connect) {
+                $uids = $this->redis->smembers();
+                foreach ($uids as $v) {
                     $msg[] = [
-                        'name'=>$_connect['name'],
-                        'uid'=>$_connect['uid'],
+                        'name'=>$v['name'],
+                        'uid'=>$v['uid'],
                     ];
                 }
+
                 $connect->send(json_encode(["type"=>"group","msg"=>$msg]));
                 //echo self::MSG_TYPE_GET_GROUP.':::'.json_encode($msg).PHP_EOL;
         }
@@ -280,6 +351,7 @@ class Work
      * @param ConnectInterface $connect
      */
     public function onClose(ConnectInterface $connect) {
+
         unset($this->_connect[$connect->id]);
         foreach ($this->_group as $k=>$v) {
             if($v[$connect->id]) {
@@ -287,9 +359,11 @@ class Work
                 break;
             }
         }
+        //请求用户列表
         foreach ($this->_uid as $k=>$v) {
-            if($v[$connect->id]) {
+            if($v['conn']->id == $connect->id) {
                 unset($this->_uid[$k]);
+                $this->redis->hDel($k);
                 break;
             }
         }

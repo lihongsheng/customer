@@ -53,4 +53,12 @@ class Tools
 
         return $str;
     }
+
+    /**
+     * 生成ID
+     * @return string
+     */
+    public static function createId() {
+        return date("YmdHis").rand(100000,99999);
+    }
 }

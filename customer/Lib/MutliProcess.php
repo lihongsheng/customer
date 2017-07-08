@@ -121,6 +121,16 @@ class MutliProcess
         //$this->monitorWorkers();
     }
 
+    /**
+     * @param $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        if(isset($this->$name)) {
+            return $this->$name;
+        }
+    }
 
 
     /**

@@ -13,8 +13,6 @@
 
 
     <script type="text/javascript">
-        if (typeof console == "undefined") {    this.console = { log: function (msg) {  } };}
-
         var img = [
             '/customer/public/img/1.jpeg',
             '/customer/public/img/2.jpeg',
@@ -24,12 +22,18 @@
         WEB_SOCKET_SWF_LOCATION = "/customer/public/swf/WebSocketMain.swf";
         WEB_SOCKET_DEBUG = true;
 
+
         var ws, name, client_list={};
         var uid;
+
+
         // 连接服务端
         function connect() {
+            //生成UID
             var tmp = Math.random()*(1000-100) + 100;
             uid = parseInt(tmp);
+
+
             // 创建websocket
             ws = new WebSocket("ws://"+document.domain+":20072");
             // 当socket连接打开时，输入用户名
@@ -80,18 +84,6 @@
             console.log(login_data);
             ws.send(JSON.stringify(login_data));
         }
-
-       /* setTimeout(function(){
-            var login_data = {
-                "type":"bindGroup",
-                "uid":uid,
-                "name":name,
-                "msg":'欢迎'+name+'加入房间',
-                "sendtoid":"1"
-            };
-            console.log(login_data);
-            ws.send(JSON.stringify(login_data));
-        },1000);*/
 
         // 服务端发来消息时
         function onmessage(e)

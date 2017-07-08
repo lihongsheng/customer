@@ -10,15 +10,16 @@
  */
 namespace customer\Lib;
 
+use customer\Lib\Db\RedisModel;
+
 class RedisQueue
 {
     private $model;
     private $key = 'QUEUE::';
 
-    public function __construct()
+    public function __construct($redis)
     {
-        $this->model = new \Redis();
-        $this->model->pconnect('127.0.0.1','6379');
+        $this->model = RedisModel::getRedis();
         $this->model->select(1);
     }
 

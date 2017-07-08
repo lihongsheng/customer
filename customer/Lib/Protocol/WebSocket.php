@@ -27,14 +27,14 @@ class WebSocket extends Protocol
 
     public function input($buffer, ConnectInterface $connect) {
 
-        echo "websocket start".PHP_EOL;
+        //echo "websocket start".PHP_EOL;
         $bufferLen = strlen($buffer);
         if($bufferLen < 2) {
-            echo "2:::: ".$this->decode($buffer).PHP_EOL;
+            //echo "2:::: ".$this->decode($buffer).PHP_EOL;
             return 0;
         }
 
-        echo "websocket protocol start ".PHP_EOL;
+        //echo "websocket protocol start ".PHP_EOL;
         //获取第一字符（8个bit位）
         $firstbyte = ord($buffer[0]);
         //右移位 获取第一个bit位的fin码
@@ -89,7 +89,7 @@ class WebSocket extends Protocol
                 }
         }
 
-        echo " websocket    parse".PHP_EOL;
+        //echo " websocket    parse".PHP_EOL;
 
         $headLen = 6;//一般前六个字符未协议头
         if($dataLen == 126) {
@@ -124,13 +124,13 @@ class WebSocket extends Protocol
         if($currentLen <= $bufferLen) {
             //最后一个包
             if($fin) {
-                echo "currentLen ".$currentLen.PHP_EOL;
+                //echo "currentLen ".$currentLen.PHP_EOL;
                 return $currentLen;
             } else {
                 $tmpBuffer = substr($buffer,0,$currentLen);
                 $connect->setRecv(substr($buffer,$headLen));
                 $tmpData = $this->decode($tmpBuffer);
-                echo "tmpData ".$tmpData.PHP_EOL;
+                //echo "tmpData ".$tmpData.PHP_EOL;
                 $connect->setTmpData($tmpData);
             }
 

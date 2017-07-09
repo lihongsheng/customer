@@ -171,12 +171,7 @@ class Index extends Controller{
 
     }
 
-    /**
-     * 主进程工作进程
-     */
-    public function masterWork() {
 
-    }
 
 
 

@@ -100,7 +100,7 @@ class TcpConnect extends ConnectInterface
 
         if(self::$protocol->isHandle() && !$this->isHandle) {
             $protocol = self::$protocol->handle($buffer);
-
+            echo $protocol;
             socket_write($this->_fd,$protocol,strlen($protocol));
             $this->isHandle = true;
             call_user_func(array(self::$work,'onConnect'),$this);

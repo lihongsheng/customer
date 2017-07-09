@@ -8,19 +8,23 @@
  *
  * $Id$
  */
-namespace customer\Lib;
+namespace customer\Lib\Queue;
 
 use customer\Lib\Db\RedisModel;
 
 class RedisQueue
 {
+    /**
+     * @var \Redis
+     */
     private $model;
     private $key = 'QUEUE::';
 
-    public function __construct($redis)
+    public function __construct()
     {
         $this->model = RedisModel::getRedis();
         $this->model->select(1);
+
     }
 
     /**
@@ -39,10 +43,11 @@ class RedisQueue
      * @return bool
      */
     public function get($tag = 1) {
-        //$data = msg_receive($this->msgKey, $tag, $msgType, 1024, $message);
-        $data = $this->model->lPop($this->key.$tag);
-        if($data) {
-            return json_decode($data,true);
+        if($this->model->exists($this->key.$tag)) {
+            $data = $this->model->lPop($this->key . $tag);
+            if ($data) {
+                return json_decode($data, true);
+            }
         }
         return false;
     }
@@ -61,6 +66,7 @@ class RedisQueue
      * @return bool
      */
     public function close() {
+        $this->model->close();
         //return msg_remove_queue($this->msgKey);
     }
 

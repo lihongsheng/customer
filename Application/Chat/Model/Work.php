@@ -19,7 +19,7 @@ use customer\Lib\Protocol\WebSocket;
 
 use customer\Lib\Connect\TcpConnect;
 
-use customer\Lib\RedisQueue;
+use customer\Lib\Queue\RedisQueue;
 use customer\Lib\Timer;
 
 use customer\Lib\Events\LibEvent;
@@ -97,7 +97,11 @@ class Work
      */
     protected  function setProcessTitle($title)
     {
-        cli_set_process_title($title);
+        if(function_exists("cli_set_process_title")) {
+            cli_set_process_title($title);
+        } else if (extension_loaded('proctitle') && function_exists('setproctitle')) {
+            @setproctitle($title);
+        }
     }
 
     /**
@@ -115,8 +119,9 @@ class Work
 
         $this->setProcessTitle("work:listen");
 
-        //
-        $this->redis = RedisModel::getRedis();
+        sleep(3);
+        $this->redis = RedisModel::getRedis(true);
+        $this->redis->select(1);
         $this->queue = new RedisQueue();
 
         $this->pid = posix_getpid();
@@ -135,10 +140,14 @@ class Work
 
     }
 
-
+    /**
+     * 链接主进程，并绑定 pid
+     */
     protected function masterToLink() {
         $this->masterLink  = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_connect($this->masterLink,'127.0.0.1',20073);
+        $msg = json_encode(['type'=>'bind','pid'=>$this->pid])."\n";
+        socket_write($this->masterLink,$msg,strlen($msg));
     }
 
 
@@ -151,7 +160,7 @@ class Work
 
         if($data < 0) {
             $this->masterToLink();
-            $msg = json_encode(['type'=>'bind','pid'=>$this->pid]);
+            $msg = json_encode(['type'=>'bind','pid'=>$this->pid])."\n";
             socket_write($this->masterLink,$msg,strlen($msg));
             $this->event->del($fd, LibEvent::EV_READ);
             $this->event->add($this->masterLink, LibEvent::EV_READ,array($this,'masterMsg'));
@@ -268,7 +277,7 @@ class Work
                 /*$this->_group[$message['sendtoid']][$connect->id]['conn'] = $connect;
                 $this->_group[$message['sendtoid']][$connect->id]['uid'] = $message['uid'];
                 $this->_group[$message['sendtoid']][$connect->id]['name'] = $message['name'];*/
-                $uids = $this->redis->smembers();
+                $uids = $this->redis->smembers("members");
                 $uids[] = $message['uid'];
                 $this->redis->sAdd($message['sendtoid'],$message['uid']);
                 foreach ($uids as $v) {
@@ -286,7 +295,7 @@ class Work
                 //用户组消息
             case self::MSG_TYPE_MESSAGE:
 
-                $uids = $this->redis->smembers();
+                $uids = $this->redis->smembers("members");
                 foreach ($uids as $v) {
                     if($this->_uid[$v]) {
                         $msg = json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]);
@@ -317,6 +326,7 @@ class Work
                 $this->_uid[$message['uid']]['conn'] = $connect;
                 $this->_uid[$message['uid']]['name'] = $message['name'];
                 $this->_uid[$message['uid']]['uid']  = $message['uid'];
+                $this->redis->sAdd("members",$message['uid']);
                 //存入REDIS
                 $this->redis->HSET($message['uid'],[
                     'conn'=>$connect->id,
@@ -330,8 +340,10 @@ class Work
                 //获取组成员消息
             case self::MSG_TYPE_GET_GROUP:
                 $msg = [];
-                $uids = $this->redis->smembers();
+                $uids = $this->redis->smembers("members");
                 foreach ($uids as $v) {
+                    $_uid = $v['uid'];
+                    $_name = $this->_uid[$_uid] ? $this->_uid[$_uid] : $this->redis->hGet($_uid)['name'];
                     $msg[] = [
                         'name'=>$v['name'],
                         'uid'=>$v['uid'],

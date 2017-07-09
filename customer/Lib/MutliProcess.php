@@ -142,7 +142,11 @@ class MutliProcess
     protected  function setProcessTitle($title)
     {
 
-        cli_set_process_title($title);
+        if(function_exists("cli_set_process_title")) {
+            cli_set_process_title($title);
+        } else if (extension_loaded('proctitle') && function_exists('setproctitle')) {
+            @setproctitle($title);
+        }
         //        if (function_exists('cli_set_process_title')) {
         //            @cli_set_process_title($title);
         //        }

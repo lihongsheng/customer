@@ -100,8 +100,7 @@ class TcpConnect extends ConnectInterface
 
         if(self::$protocol->isHandle() && !$this->isHandle) {
             $protocol = self::$protocol->handle($buffer);
-            echo $buffer;
-            echo $protocol.PHP_EOL;
+
             socket_write($this->_fd,$protocol,strlen($protocol));
             $this->isHandle = true;
             call_user_func(array(self::$work,'onConnect'),$this);
@@ -109,7 +108,7 @@ class TcpConnect extends ConnectInterface
             $this->_recv .= $buffer;
 
             while (true) {
-                echo "buffer ".$buffer.PHP_EOL;
+
                 try {
                     $tmpLen = self::$protocol->input($this->_recv, $this);
                 }catch (\Exception $e) {
@@ -117,16 +116,16 @@ class TcpConnect extends ConnectInterface
                 }
                 $tmpStr = '';
                 if($tmpLen === 0) {
-                    echo "tmpLen is null".PHP_EOL;
+
                     break;
                 } else {
                     $tmpStr = substr($this->_recv,0,$tmpLen);
-                    echo "tmpLen is ".$tmpLen.PHP_EOL;
+
                     $this->_recv = substr($this->_recv,$tmpLen);
                 }
                 //$buffer = self::$protocol->decode($buffer);
                 if($tmpStr) {
-                    echo $tmpStr;
+
                     $decodeData = $this->_tmpData . self::$protocol->decode($tmpStr);
                     $this->_tmpData = '';
                     call_user_func(array(self::$work,'onMessage'),$decodeData,$this);

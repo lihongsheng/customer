@@ -15,15 +15,23 @@ class RedisModel {
 
     private function __construct()
     {
-        $model = new \Redis();
-        $model->pconnect('127.0.0.1','6379');
-        return $model;
+
     }
 
-    public static function getRedis() {
-        if(!self::$redis) {
-            self::$redis = new self();
+    public static function getRedis($reConnect = false) {
+        if(!$reConnect) {
+            if (!self::$redis) {
+                $model = new \Redis();
+                $model->pconnect('127.0.0.1', '6379');
+                self::$redis = $model;
+            }
+        } else {
+            $model = new \Redis();
+            $model->pconnect('127.0.0.1', '6379');
+            self::$redis = $model;
         }
+
+        //return $model;
         return self::$redis;
     }
 }

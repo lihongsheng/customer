@@ -15,10 +15,11 @@ class bootstrap
     protected  static $ClassMap= [];
     public function init()
     {
-        // 注册AUTOLOAD方法
-        spl_autoload_register('bootstrap::autoload');
         //捕获异常注册
         set_exception_handler('bootstrap::Exception');
+        // 注册AUTOLOAD方法
+        spl_autoload_register('bootstrap::autoload');
+
         return $this;
     }
 
@@ -32,13 +33,15 @@ class bootstrap
             include_once self::$ClassMap[$class];
         } elseif(false !== stripos($class,'\\')) {
             $name = str_replace('\\','/',$class);
-            if(false !== stripos($name,'customer')){
+            if(false !== stripos($name,'customer') && file_exists(ROOT_PATH.$name.'.php')){
+
                 self::$ClassMap[$class] = ROOT_PATH.$name.'.php';
                 require_once self::$ClassMap[$class];
             } elseif(file_exists(APP_PATH.$name.'.php')) {
                 self::$ClassMap[$class] = APP_PATH.$name.'.php';
                 require_once self::$ClassMap[$class];
             } else {
+
                 throw new Exception("NOT FIND ".$name.'.php');
             }
         }

@@ -74,6 +74,12 @@ class Work
 
 
     protected $masterLink;
+
+
+    protected $masterBuffer;
+
+
+    protected $memKey = 'members::';
     /**
      * Work constructor.
      * @param $listen
@@ -156,6 +162,7 @@ class Work
      * @param $fd
      */
     public function masterMsg($fd) {
+        $buffer = '';
         $data = socket_recv($fd,$buffer,2048,0);
 
         if($data < 0) {
@@ -165,13 +172,19 @@ class Work
             $this->event->del($fd, LibEvent::EV_READ);
             $this->event->add($this->masterLink, LibEvent::EV_READ,array($this,'masterMsg'));
         }
+        if($buffer == '') {
+            return;
+        }
+        $this->masterBuffer .= $buffer;
         //解析text协议
         while(true) {
-            $pos = strpos($buffer, "\n");
+            $pos = strpos($this->masterBuffer, "\n");
             if($pos === false) {
                 break;
             }
-            $tmp = substr($buffer,0,$pos+1);
+            $pos = $pos + 1;
+            $tmp = substr($buffer,0,$pos);
+            $this->masterBuffer = substr($this->masterBuffer,$pos);
             $tmp = json_encode($tmp);
             /*if($tmp['type'] = 'bind') {
                 $this->pidMapChild[$tmp['pid']] = $id;
@@ -277,9 +290,15 @@ class Work
                 /*$this->_group[$message['sendtoid']][$connect->id]['conn'] = $connect;
                 $this->_group[$message['sendtoid']][$connect->id]['uid'] = $message['uid'];
                 $this->_group[$message['sendtoid']][$connect->id]['name'] = $message['name'];*/
-                $uids = $this->redis->smembers("members");
+                //获取 全部用户UID
+                $gid = $message['sendtoid'];
+                $uids = $this->redis->smembers($this->memKey.$gid);
+
                 $uids[] = $message['uid'];
-                $this->redis->sAdd($message['sendtoid'],$message['uid']);
+                //把用户UID绑定到对应的组
+                $this->redis->sAdd($this->memKey.$gid,$message['uid']);
+
+
                 foreach ($uids as $v) {
                     if($this->_uid[$v]) {
                         $msg = json_encode(["type" => self::MSG_TYPE_MESSAGE, "msg" => $message['msg'] . ":::" . posix_getpid(), 'uid' => $message['uid'], 'name' => $message['name'], 'time' => date('Y-m-d H:i:s')]);
@@ -289,13 +308,13 @@ class Work
                     }
                 }
 
-                //echo self::MSG_TYPE_BIND_GROUP.':::'.json_encode($message).PHP_EOL;
                 break;
 
                 //用户组消息
             case self::MSG_TYPE_MESSAGE:
-
-                $uids = $this->redis->smembers("members");
+                $gid = 1;//测试默认只有一个组
+                //获取所有组用户的UID
+                $uids = $this->redis->smembers($this->memKey.$gid);
                 foreach ($uids as $v) {
                     if($this->_uid[$v]) {
                         $msg = json_encode(["type"=>self::MSG_TYPE_MESSAGE,"msg"=>$message['msg'],'uid'=>$message['uid'],'name'=>$message['name'],'time'=>date('Y-m-d H:i:s')]);
@@ -326,8 +345,8 @@ class Work
                 $this->_uid[$message['uid']]['conn'] = $connect;
                 $this->_uid[$message['uid']]['name'] = $message['name'];
                 $this->_uid[$message['uid']]['uid']  = $message['uid'];
-                $this->redis->sAdd("members",$message['uid']);
-                //存入REDIS
+
+                //存入用户信息 到 REDIS
                 $this->redis->HSET($message['uid'],[
                     'conn'=>$connect->id,
                     "name"=>$message['name'],
@@ -340,13 +359,14 @@ class Work
                 //获取组成员消息
             case self::MSG_TYPE_GET_GROUP:
                 $msg = [];
-                $uids = $this->redis->smembers("members");
+                $gid = 1;
+                $uids = $this->redis->smembers($this->memKey.$gid);
                 foreach ($uids as $v) {
-                    $_uid = $v['uid'];
-                    $_name = $this->_uid[$_uid] ? $this->_uid[$_uid] : $this->redis->hGet($_uid)['name'];
+                    $_uid = $v;
+                    $_name = $this->_uid[$_uid] ? $this->_uid[$_uid]['name'] : $this->redis->hGet($_uid)['name'];
                     $msg[] = [
-                        'name'=>$v['name'],
-                        'uid'=>$v['uid'],
+                        'name'=>$_name,
+                        'uid'=>$_uid,
                     ];
                 }
 

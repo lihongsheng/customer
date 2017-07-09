@@ -148,7 +148,8 @@ class Index extends Controller{
                 $userInfo = $this->_redis->hGet($uid);
                 $pid = $userInfo['pid'];
                 if ($pid) {
-                    $msg = json_encode($msg);
+                    //发送文本消息 必须带有 换行符
+                    $msg = json_encode($msg)."\n";
                     socket_write($this->links[$this->pidMapChild[pid]], $msg, strlen($msg));
                 }
             }

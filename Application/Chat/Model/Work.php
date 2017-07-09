@@ -185,10 +185,14 @@ class Work
             $pos = $pos + 1;
             $tmp = substr($buffer,0,$pos);
             $this->masterBuffer = substr($this->masterBuffer,$pos);
-            $tmp = json_encode($tmp);
-            /*if($tmp['type'] = 'bind') {
-                $this->pidMapChild[$tmp['pid']] = $id;
-            }*/
+            $tmp = json_decode($tmp,true);
+            if($tmp['type'] != 'bind' && $tmp['type'] != 'ping') {
+                $uid = $tmp['uid'];
+                if($uid && $this->_uid[$uid]) {
+                    //发送消息到对应的用户端
+                    $this->_uid[$uid]['conn']->send(json_encode($tmp));
+                }
+            }
         }
     }
 

@@ -100,7 +100,7 @@ class TcpConnect extends ConnectInterface
 
         if(self::$protocol->isHandle() && !$this->isHandle) {
             $protocol = self::$protocol->handle($buffer);
-            echo $protocol.posix_getpid();
+            //echo $protocol.posix_getpid();
             socket_write($this->_fd,$protocol,strlen($protocol));
             $this->isHandle = true;
             call_user_func(array(self::$work,'onConnect'),$this);
@@ -127,6 +127,7 @@ class TcpConnect extends ConnectInterface
                 if($tmpStr) {
 
                     $decodeData = $this->_tmpData . self::$protocol->decode($tmpStr);
+                    echo $decodeData."::::PID".posix_getpid().PHP_EOL;
                     $this->_tmpData = '';
                     call_user_func(array(self::$work,'onMessage'),$decodeData,$this);
                 }

@@ -65,7 +65,7 @@ class Index extends Controller{
      */
     public function indexAction() {
 
-        $this->workModel = new MutliProcess(4);
+        $this->workModel = new MutliProcess(4,true);
         //创建对外的监听端口
         $listen = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);

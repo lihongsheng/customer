@@ -65,7 +65,7 @@ class Index extends Controller{
      */
     public function indexAction() {
 
-        $this->workModel = new MutliProcess(4,true);
+        $this->workModel = new MutliProcess(4,false);
         //创建对外的监听端口
         $listen = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);
@@ -139,6 +139,7 @@ class Index extends Controller{
                         }
                     }
                 }
+
             }
 
             //从队列获取消息
@@ -157,6 +158,7 @@ class Index extends Controller{
             //向子进程放送ping
             $tmpTime = time()-$this->startTime;
             if($tmpTime > 30) {
+                echo "mastework".PHP_EOL;
                 foreach ($this->pidMapChild as $k => $v) {
                     if ($k == $pid) {
                         continue;
@@ -165,6 +167,8 @@ class Index extends Controller{
                     socket_write($this->links[$v],$msg,strlen($msg));
                 }
             }
+
+            return;
         };
         $this->workModel->start();
 

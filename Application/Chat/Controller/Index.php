@@ -144,6 +144,7 @@ class Index extends Controller{
 
             //从队列获取消息
             $msg = $this->_queue->get();
+            $pid = '';
             if($msg) {
                 $uid = $msg['uid'];
                 $userInfo = $this->_redis->hGet($uid);
@@ -158,7 +159,7 @@ class Index extends Controller{
             //向子进程放送ping
             $tmpTime = time()-$this->startTime;
             if($tmpTime > 30) {
-                echo "mastework".PHP_EOL;
+                //echo "mastework";
                 foreach ($this->pidMapChild as $k => $v) {
                     if ($k == $pid) {
                         continue;

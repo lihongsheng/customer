@@ -411,7 +411,7 @@ class MutliProcess
     protected function stopAllChild() {
             if(!empty($this->works)) {
                 foreach($this->works as $val) {
-                    echo "kill ".$val.PHP_EOL;
+                    file_put_contents("/tmp/kill.log)", "kill ".$val.PHP_EOL,FILE_APPEND);
                     posix_kill($val,SIGINT);
                 }
             }

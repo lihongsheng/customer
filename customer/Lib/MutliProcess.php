@@ -113,12 +113,12 @@ class MutliProcess
         //重定向输出，标准输出(echo,var_*,error,输出到文件)
         $this->resetStd();
         $this->setProcessTitle("work::master");
-
+        $this->installSignal();
 
         /*
         $this->resetStd();
-        $this->installSignal();*/
-        //$this->monitorWorkers();
+        $this->monitorWorkers();
+        */
     }
 
     /**

@@ -317,10 +317,11 @@ class MutliProcess
      * 子进程工作启动
      */
     private function forkWork() {
-        //$run = $this->workRun;
-        $this->work->run();
+
         $pid = posix_getpid();
         $this->reinstallSignal();
+        $this->work->run();
+
     }
 
 

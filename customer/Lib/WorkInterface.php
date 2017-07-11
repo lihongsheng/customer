@@ -16,7 +16,6 @@ abstract class WorkInterface
      *
      * 信号注册函数
      */
-
     abstract public  function installSignal();
 
 

@@ -95,7 +95,7 @@ class MutliProcess
      * 存储PID文件的地方
      * @var string
      */
-    protected $PidFile = '/tmp/multiWork.pid';
+    protected $PidFile = 'multiWork.php';
 
 
     protected $Status = 1;
@@ -110,6 +110,13 @@ class MutliProcess
         $this->setMaxsize($maxSize);
         //是否变成守护进程
         $this->setDaemonize($daemonize);
+
+        //pidfile
+        $this->PidFile = CACHE_PATH.$this->PidFile;
+
+        //监控状态
+        $this->statusHandle();
+
         //是否变成守护进程
         $this->daemonize();
         //重定向输出，标准输出(echo,var_*,error,输出到文件)
@@ -164,21 +171,37 @@ class MutliProcess
      * 如 stop,restart,start,reload
      */
     protected function statusHandle() {
-        $status = $_SERVER['argv'][1] ? $_SERVER['argv'][1] : $argv[1];
+
+        $status = $_SERVER['argv'][2] ? $_SERVER['argv'][2] : $argv[2];
         switch ($status) {
             case "stop":
-                $this->stop();
+                $pids = $this->getAllPid();
+                var_dump($pids);
+                if(isset($pids['masterPid']) && $pids['masterPid']) {
+
+                    posix_kill($pids['masterPid'],SIGINT);
+                }
+                sleep(10);
+                if(isset($pids['masterPid']) && $pids['masterPid']) {
+                    posix_kill($pids['masterPid'], SIGKILL);
+                }
+                if(isset($pids['sonPid'])) {
+                    foreach ($pids['sonPid'] as $pid) {
+                        posix_kill($pid, SIGKILL);
+                    }
+                }
+                exit(0);
                 break;
             case "start":
                 $this->start();
                 break;
             case "restart":
                 $this->retart();
+                break;
             case "reload":
                 $this->reload();
-
+                break;
             default:
-                throw new \Exception("未知的状态,support stop,restart,start,reload");
         }
     }
 
@@ -364,6 +387,8 @@ class MutliProcess
     public function monitorWorkers()
     {
         $this->Status = self::STATUS_RUNNING;
+        $this->setPidFile();
+
         while (true) {
             //等待信号处理器
             pcntl_signal_dispatch();
@@ -379,10 +404,12 @@ class MutliProcess
                         unset($this->works[$pid]);
                         $this->forkOne();
                         if ($status !== 0) {
+
                             // $this->log("worker[:$pid] exit with status $status");
                             //throw new \Exception("worker[:$pid] exit with status $status");
                             echo "worker[:$pid] exit with status $status";
                         }
+                        $this->setPidFile();
                     }
                 } else {
                     //$this->exitAndClearAll();
@@ -443,10 +470,12 @@ class MutliProcess
     /**
      *
      */
-    protected static function exitAndClearAll()
+    protected  function exitAndClearAll()
     {
         //清除工作
         echo "清楚工作".PHP_EOL;
+        $str = "<?php return [];";
+        file_put_contents($this->PidFile,$str);
         exit(0);
     }
 
@@ -482,6 +511,28 @@ class MutliProcess
     public function setWork($work)
     {
         $this->work    = $work;
+    }
+
+
+
+    protected function setPidFile() {
+        $data = [
+            'masterPid' => $this->MasterId,
+            'sonPid'    => $this->works,
+        ];
+
+        //$str = json_encode($data);
+        $str = "<?php return ".var_export($data,true).";";
+        file_put_contents($this->PidFile,$str);
+    }
+
+
+    protected function getAllPid() {
+
+        $tmp =  include_once $this->PidFile;
+       // $tmp = file_get_contents($this->PidFile);
+        //return json_decode($tmp,true);
+        return $tmp;
     }
 
 }

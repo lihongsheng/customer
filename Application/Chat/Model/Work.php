@@ -151,7 +151,11 @@ class Work
         exit(0);
     }
 
-
+    public function installSignal()
+    {
+        $this->event->add(SIGINT, LibEvent::EV_SIGNAL, array($this, 'signalHandler'));
+        $this->event->add(SIGTERM, LibEvent::EV_SIGNAL, array($this, 'signalHandler'));
+    }
     /**
      * work运行
      */

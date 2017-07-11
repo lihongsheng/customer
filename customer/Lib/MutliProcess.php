@@ -97,6 +97,8 @@ class MutliProcess
      */
     protected $PidFile = '/tmp/multiWork.pid';
 
+
+    protected $Status = 1;
     /**
      * @param int $maxSize
      * @throws Exception
@@ -259,13 +261,16 @@ class MutliProcess
     protected function installSignal()
     {
         //
-        pcntl_signal(SIGINT, array($this, 'signalHandler'), false);
+        pcntl_signal(SIGINT, array($this, 'signalHandler'),false);
+        pcntl_signal(SIGTERM, SIG_IGN,  array($this, 'signalHandler'),false);
         // 用户自定义信号
         pcntl_signal(SIGUSR1, array($this, 'signalHandler'), false);
         //  用户自定义信号
         pcntl_signal(SIGUSR2, array($this, 'signalHandler'), false);
         // ignore
         //pcntl_signal(SIGPIPE, SIG_IGN, false);
+
+
     }
 
 
@@ -279,11 +284,12 @@ class MutliProcess
     {
         // 取消父进程注册的信号处理函数
         pcntl_signal(SIGINT, SIG_IGN, false);
+        pcntl_signal(SIGTERM, SIG_IGN, false);
+
         pcntl_signal(SIGUSR1, SIG_IGN, false);
         pcntl_signal(SIGUSR2, SIG_IGN, false);
         //pcntl_signal(SIGPIPE, SIG_IGN, false);
-        //调用子类自己的信号管理函数
-        $this->work->installSignal();
+
 
     }
 
@@ -296,9 +302,13 @@ class MutliProcess
      */
     public function signalHandler($signal)
     {
+
         switch ($signal) {
             // Stop.
             case SIGINT:
+                $this->stop();
+                break;
+            case SIGTERM:
                 $this->stop();
                 break;
             // Reload.
@@ -353,8 +363,8 @@ class MutliProcess
      */
     public function monitorWorkers()
     {
-
-        while (1) {
+        $this->Status = self::STATUS_RUNNING;
+        while (true) {
             //等待信号处理器
             pcntl_signal_dispatch();
             $status = -1;
@@ -370,11 +380,15 @@ class MutliProcess
                         $this->forkOne();
                         if ($status !== 0) {
                             // $this->log("worker[:$pid] exit with status $status");
-                            throw new \Exception("worker[:$pid] exit with status $status");
+                            //throw new \Exception("worker[:$pid] exit with status $status");
+                            echo "worker[:$pid] exit with status $status";
                         }
                     }
                 } else {
                     //$this->exitAndClearAll();
+                    //删除 已经停止的 进程pid数据
+                    echo 'kill ::::'.$pid.PHP_EOL;
+                    unset($this->works[$pid]);
                 }
             } else {
                 // 主进程shutdown并且子进程全部exit
@@ -386,6 +400,8 @@ class MutliProcess
             if(!empty($this->masterWork)) {
                 call_user_func($this->masterWork);
             }
+
+            pcntl_signal_dispatch();
         }
 
     }
@@ -410,11 +426,16 @@ class MutliProcess
      * 停止子进程
      */
     protected function stopAllChild() {
+
             if(!empty($this->works)) {
                 foreach($this->works as $val) {
                     file_put_contents("/tmp/kill.log)", "kill ".$val.PHP_EOL,FILE_APPEND);
                     posix_kill($val,SIGINT);
+                    //Timer::add(2,"posix_kill",array($val,SIGKILL),false);
+                    sleep(2);
+                    posix_kill($val,SIGKILL);
                 }
+                //$this->works = [];
             }
     }
 
@@ -425,6 +446,7 @@ class MutliProcess
     protected static function exitAndClearAll()
     {
         //清除工作
+        echo "清楚工作".PHP_EOL;
         exit(0);
     }
 
@@ -460,7 +482,6 @@ class MutliProcess
     public function setWork($work)
     {
         $this->work    = $work;
-        //$this->workRun =  $run;
     }
 
 }

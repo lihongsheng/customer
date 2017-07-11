@@ -40,6 +40,9 @@ class Work
     //组
     protected $_group = [];
 
+    /**
+     * @var Event
+     */
     protected $event;
 
     protected $protocol;
@@ -110,13 +113,44 @@ class Work
         }
     }
 
+
+
     /**
-     * 信号注册函数
+     * 信号处理
+     *
+     * @param int $signal
      */
-    public function installSignal()
+    public function signalHandler($signal)
     {
 
+        switch ($signal) {
+            // Stop.
+            case SIGINT:
+                $this->stop();
+                break;
+            case SIGTERM:
+                $this->stop();
+                break;
+            // Reload.
+            case SIGUSR1:
+                //$this->reload();
+                break;
+            // Show status.
+            case SIGUSR2:
+                //$this->writeStatisticsToStatusFile();
+                break;
+        }
     }
+
+
+    /**
+     *
+     */
+    protected function stop() {
+        echo "child KILL ::::".posix_getpid().PHP_EOL;
+        exit(0);
+    }
+
 
     /**
      * work运行
@@ -132,6 +166,7 @@ class Work
 
         $this->pid = posix_getpid();
         $this->event = new Event();
+        $this->installSignal();
 
         /**
          *

@@ -65,7 +65,9 @@ class Index extends Controller{
      */
     public function indexAction() {
 
-        $this->workModel = new MutliProcess(4,true);
+        error_reporting(E_ERROR);
+        ini_set('display_errors',1);
+        $this->workModel = new MutliProcess(2,false);
         //创建对外的监听端口
         $listen = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);
@@ -85,8 +87,8 @@ class Index extends Controller{
         $this->startTime = time();
 
         $work = new Work($listen);
-        $this->workModel->setWork($work);
 
+        $this->workModel->setWork($work);
 
         //主进程工作ID
         $this->workModel->masterWork = function () {

@@ -146,7 +146,7 @@ class Work extends WorkInterface
     /**
      *
      */
-    protected function stop() {
+    public function stop() {
         echo "child KILL ::::".posix_getpid().PHP_EOL;
         exit(0);
     }

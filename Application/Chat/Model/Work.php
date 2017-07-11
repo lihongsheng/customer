@@ -24,10 +24,10 @@ use customer\Lib\Timer;
 
 use customer\Lib\Events\LibEvent;
 use customer\Lib\Events\Event;
+use customer\Lib\WorkInterface;
 
 
-
-class Work
+class Work extends WorkInterface
 {
 
 

@@ -2,7 +2,7 @@
 /**
  * Websoc.php
  *
- * 作者:
+ * 作者: lihongsheng
  * 创建日期: 17/7/5 下午11:08
  * 修改记录:
  *
@@ -25,10 +25,6 @@ class Websoc extends  Controller {
              echo 'hell word' . PHP_EOL;
             $work = new WebsocketWork();
             $work->run();
-
-
-
-
 
         }catch (\Exception $e) {
             echo $e->getMessage();

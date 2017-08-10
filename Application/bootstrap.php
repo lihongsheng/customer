@@ -2,7 +2,7 @@
 /**
  * bootstart.php
  *
- * 作者: Bright (dannyzml@qq.com)
+ * 作者: lihongsheng
  * 创建日期: 17/2/14 上午12:24
  * 修改记录:
  *

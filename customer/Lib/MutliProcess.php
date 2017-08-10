@@ -521,7 +521,6 @@ class MutliProcess
             'sonPid'    => $this->works,
         ];
 
-        //$str = json_encode($data);
         $str = "<?php return ".var_export($data,true).";";
         file_put_contents($this->PidFile,$str);
     }
@@ -530,8 +529,6 @@ class MutliProcess
     protected function getAllPid() {
 
         $tmp =  include_once $this->PidFile;
-       // $tmp = file_get_contents($this->PidFile);
-        //return json_decode($tmp,true);
         return $tmp;
     }
 

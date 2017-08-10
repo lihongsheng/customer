@@ -12,6 +12,8 @@ namespace customer\Lib;
 
 abstract class WorkInterface
 {
+
+
     /**
      *
      * 信号注册函数
@@ -21,13 +23,11 @@ abstract class WorkInterface
 
 
 
-
     /**
      * 信号处理
      *
      * @param int $signal
      */
-
     public function  signalHandler($signal)
     {
 
@@ -51,10 +51,44 @@ abstract class WorkInterface
     }
 
 
+
+    /**
+     * 退出进程
+     */
     public function stop() {
         exit(0);
     }
 
 
-    abstract public function run();
+    /**
+     * 工作进程，运行的任务
+     */
+     public function run() {
+        $this->installSignal();
+     }
+
+
+
+
+    /**
+     * 设置进程名字
+     *
+     * @param string $title
+     * @return void
+     */
+    protected  function setProcessTitle($title)
+    {
+
+        cli_set_process_title($title);
+        if (function_exists('cli_set_process_title')) {
+            cli_set_process_title($title);
+        }
+        elseif (extension_loaded('proctitle') && function_exists('setproctitle')) {
+            setproctitle($title);
+        }
+    }
+
+
+
+
 }

@@ -25,7 +25,7 @@ class MultiWork extends WorkInterface
 
         //注册
         pcntl_signal(SIGINT, array($this, 'signalHandler'),false);
-        pcntl_signal(SIGTERM, SIG_IGN,  array($this, 'signalHandler'),false);
+        pcntl_signal(SIGTERM,  array($this, 'signalHandler'),false);
 
 
     }
@@ -49,22 +49,6 @@ class MultiWork extends WorkInterface
     }
 
 
-    /**
-     * 设置进程名字
-     *
-     * @param string $title
-     * @return void
-     */
-    protected  function setProcessTitle($title)
-    {
 
-        cli_set_process_title($title);
-        //        if (function_exists('cli_set_process_title')) {
-        //            @cli_set_process_title($title);
-        //        }
-        //        elseif (extension_loaded('proctitle') && function_exists('setproctitle')) {
-        //            @setproctitle($title);
-        //        }
-    }
 
 }

@@ -1,0 +1,13 @@
+{
+  "require": {
+    "illuminate/database": "5.2.*",
+    "php-amqplib/php-amqplib": "2.6.*"
+  },
+  "repositories": {
+    "packagist": {
+      "type": "composer",
+      "url": "https://packagist.phpcomposer.com"
+    }
+  }
+}
+

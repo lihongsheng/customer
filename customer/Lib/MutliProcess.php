@@ -11,6 +11,8 @@
  */
 namespace customer\Lib;
 
+use customer\Lib\Router;
+
 class MutliProcess
 {
     /**
@@ -99,12 +101,14 @@ class MutliProcess
 
 
     protected $Status = 1;
+
     /**
+     * MutliProcess constructor.
      * @param int $maxSize
-     * @throws Exception
-     * @throws \Exception
+     * @param bool $daemonize
+     * @param Router $router
      */
-    public function __construct($maxSize = 4,$daemonize = false)
+    public function __construct($maxSize = 4, $daemonize = false, Router $router)
     {
         //设置最大启动的子进程数
         $this->setMaxsize($maxSize);
@@ -112,7 +116,9 @@ class MutliProcess
         $this->setDaemonize($daemonize);
 
         //pidfile
-        $this->PidFile = CACHE_PATH.$this->PidFile;
+        //$this->PidFile = CACHE_PATH.$this->PidFile;
+        //基于modlue_method_action命名缓存文件
+        $this->PidFile = CACHE_PATH.$router->getModule().'_'.$router->getMethod().'_'.$router->getAction().'.php';
 
         //监控状态
         $this->statusHandle();
@@ -124,10 +130,6 @@ class MutliProcess
         $this->setProcessTitle("work::master");
         $this->installSignal();
 
-        /*
-        $this->resetStd();
-        $this->monitorWorkers();
-        */
     }
 
     /**
@@ -176,12 +178,12 @@ class MutliProcess
         switch ($status) {
             case "stop":
                 $pids = $this->getAllPid();
-                var_dump($pids);
+                //var_dump($pids);
                 if(isset($pids['masterPid']) && $pids['masterPid']) {
-
+                    //发送 kill 信号
                     posix_kill($pids['masterPid'],SIGINT);
                 }
-                sleep(10);
+                sleep(5);
                 if(isset($pids['masterPid']) && $pids['masterPid']) {
                     posix_kill($pids['masterPid'], SIGKILL);
                 }

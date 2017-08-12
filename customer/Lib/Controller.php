@@ -21,12 +21,14 @@ abstract class Controller
     protected $params = [];
     protected $_name;
     protected $assignList = [];
+    protected $router;
 
     public function __construct($viewModel,Router $router){
         $this->module = $router->getModule();
         $this->method = $router->getMethod();
         $this->action = $router->getAction();
         $this->params = $router->getParams();
+        $this->router = $router;
         $this->viewModel = $viewModel;
         $this->_name = get_class($this);
         $this->init();

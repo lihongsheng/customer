@@ -67,7 +67,7 @@ class Index extends Controller{
 
         error_reporting(E_ERROR);
         ini_set('display_errors',1);
-        $this->workModel = new MutliProcess(2,false);
+        $this->workModel = new MutliProcess(2,false, $this->router);
         //创建对外的监听端口
         $listen = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($listen, SOL_SOCKET, SO_REUSEADDR, 1);

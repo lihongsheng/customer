@@ -6,6 +6,9 @@
  * 创建日期: 17/2/11 下午4:57
  * 修改记录:
  *
+
+ps aux|grep qemu|awk '{print $2}'|xargs kill -9
+ps aux|grep qemu|awk '{print $2}'|xargs kill -9
  * $Id$
  */
 error_reporting(E_ERROR);

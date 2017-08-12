@@ -60,6 +60,13 @@ class Mq extends WorkInterface
 
     protected $vhost;
 
+    /**
+     * @var function($msg) :bool {
+
+     * }
+     */
+    public $msgWork;
+
 
     public function __construct($host, $port, $user, $pwd,$vhost)
     {
@@ -73,9 +80,63 @@ class Mq extends WorkInterface
     }
 
 
+    public function set($queue, $exchange, $routing_key) {
+        $this->queue       = $queue;
+        $this->exchange    = $exchange;
+        $this->routing_key = $routing_key;
+        $this->consumer_tag= $routing_key;
+    }
+
+
     public function installSignal()
     {
     }
+
+
+
+
+    /**
+     * @param string $msg
+     */
+    public function sendMsg($msg) {
+
+        $conn = new AMQPConnection($this->host, $this->port, $this->user, $this->port, $this->vhost);
+        $ch = $conn->channel();
+
+        $msg = new AMQPMessage($msg, ['content_type' => 'text/plain', 'delivery_mode' => 2]);
+
+        /** *
+        声明一个队列
+        队列名称
+        被动：
+        持久：true //队列将在服务器重新启动后生存
+        exclusive：false //可以在其他通道中访问队列
+        auto_delete：false //一旦通道关闭，队列不会被删除。
+         */
+        $ch->queue_declare($this->queue, false, true, false, false);
+
+        /**
+        名称：$exchange
+        类型：直接
+        被动：虚假
+        持久：true //交换将在服务器重新启动后生存
+        auto_delete：false //一旦通道关闭，交换机就不会被删除。
+         */
+        $ch->exchange_declare($this->exchange, 'direct', false, true, false);
+
+        /**
+         *
+         */
+        $ch->queue_bind($this->queue, $this->exchange, $this->routing_key);
+
+        $ch->basic_publish($msg, $this->exchange, $this->routing_key);
+
+        $ch->close();
+        $conn->close();
+
+    }
+
+
 
 
     public function run() {
@@ -131,24 +192,18 @@ class Mq extends WorkInterface
      */
     protected function msgHandler($msg) {
         $isWork = call_user_func($this->msgWork,$msg->body);
-        if($isWork) {
-            $msg->delivery_info['channel']->basic_ack($msg->delivery_info['delivery_tag']);
-        }
+        //if($isWork) {
+        $msg->delivery_info['channel']->basic_ack($msg->delivery_info['delivery_tag']);
+        //}
+        //发送带有“quit”字符串的消息来取消消费者。
+        /*if （ $ message - > body === ' quit ' ）{
+            $ message - > delivery_info [ ' channel ' ] - > basic_cancel（ $ message - > delivery_info [ ' consumer_tag ' ]）;
+        }*/
     }
 
-    /**
-     * @var function($msg) :bool {
 
-     * }
-     */
-    public $msgWork;
 
-    /**
-     * @param string $msg
-     */
-    public function sendMsg($msg) {
 
-    }
 
 
 

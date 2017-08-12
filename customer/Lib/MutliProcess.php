@@ -443,6 +443,8 @@ class MutliProcess
 
         $this->Status = self::STATUS_SHUTDOWN;
         $this->stopAllChild();
+        echo "STOP SUCCESS";
+
         /**
          * 做一些清理工作
          */
@@ -460,11 +462,9 @@ class MutliProcess
                 foreach($this->works as $val) {
                     file_put_contents("/tmp/kill.log)", "kill ".$val.PHP_EOL,FILE_APPEND);
                     posix_kill($val,SIGINT);
-                    //Timer::add(2,"posix_kill",array($val,SIGKILL),false);
                     sleep(2);
                     posix_kill($val,SIGKILL);
                 }
-                //$this->works = [];
             }
     }
 
@@ -524,7 +524,10 @@ class MutliProcess
         ];
 
         $str = "<?php return ".var_export($data,true).";";
-        file_put_contents($this->PidFile,$str);
+        $isWrite = file_put_contents($this->PidFile,$str);
+        if($isWrite === false) {
+            exit("write fail in the ".$this->PidFile);
+        }
     }
 
 

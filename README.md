@@ -36,7 +36,7 @@ php 进程及网络框架 <br>
          为方便测试依据 依据于redis建立此项目<br/>
          数据定义：<br/>
             用户数据定义：<br/>
-               uid为redis键值对key<br/>
+                  uid为redis键值对key<br/>
                   包含信息<br/>
                   name姓名<br/>
                   status 状态<br/>

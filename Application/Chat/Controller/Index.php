@@ -74,7 +74,7 @@ class Index extends Controller{
         socket_bind($listen, '0.0.0.0', 20072);
         socket_listen($listen);
 
-        //创建一个对内的socket用户父子进程间的通信
+        //创建一个对内的socket用于父子进程间的通信
         $this->sockeLink = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($this->sockeLink, SOL_SOCKET, SO_REUSEADDR, 1);
         socket_bind($this->sockeLink, '127.0.0.1', 20073);

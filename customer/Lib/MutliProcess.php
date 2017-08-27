@@ -158,12 +158,7 @@ class MutliProcess
         } else if (extension_loaded('proctitle') && function_exists('setproctitle')) {
             @setproctitle($title);
         }
-        //        if (function_exists('cli_set_process_title')) {
-        //            @cli_set_process_title($title);
-        //        }
-        //        elseif (extension_loaded('proctitle') && function_exists('setproctitle')) {
-        //            @setproctitle($title);
-        //        }
+
     }
 
 
@@ -194,7 +189,7 @@ class MutliProcess
                 }
                 exit(0);
                 break;
-            case "start":
+            /*case "start":
                 $this->start();
                 break;
             case "restart":
@@ -202,7 +197,7 @@ class MutliProcess
                 break;
             case "reload":
                 $this->reload();
-                break;
+                break;*/
             default:
         }
     }
@@ -369,7 +364,6 @@ class MutliProcess
             if(count($this->works)) {
                 echo "forkOneWorker fail ON LINE ".__LINE__;
             } else {
-                //throw new Exception("forkOneWorker fail ON LINE " . __LINE__);
                 echo "no child pcntl and forkOneWorker fail ON LINE " . __LINE__;
                 exit(0);
             }
@@ -409,7 +403,7 @@ class MutliProcess
 
                             // $this->log("worker[:$pid] exit with status $status");
                             //throw new \Exception("worker[:$pid] exit with status $status");
-                            echo "worker[:$pid] exit with status $status";
+                            echo PHP_EOL."worker[:$pid] exit with status $status".PHP_EOL;
                         }
                         $this->setPidFile();
                     }

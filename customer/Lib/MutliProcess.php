@@ -172,11 +172,14 @@ class MutliProcess
         $status = $_SERVER['argv'][2] ? $_SERVER['argv'][2] : $argv[2];
         switch ($status) {
             case "stop":
+                echo "it is stop ....... ".PHP_EOL;
                 $this->killAllProcess();
                 exit(0);
                 break;
             case "restart":
+                echo "it is stop ....... ".PHP_EOL;
                 $this->killAllProcess();
+                echo "it is start ....... ".PHP_EOL;
                 break;
             /*case "start":
                 $this->start();

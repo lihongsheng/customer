@@ -24,7 +24,7 @@ class Multi extends Controller {
      */
     public function workAction() {
 
-        $work = new MutliProcess(2,false,$this->router);
+        $work = new MutliProcess(2,true,$this->router);
         $workChild = new MultiWork();
         $work->setWork($workChild);
         $work->start();

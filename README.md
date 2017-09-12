@@ -2,6 +2,13 @@
 
 准备做成开源客服系统...........
 
+支持：
+    php index.php /chat/multi/work stop
+    php index.php /chat/multi/work restart
+
+
+
+
 php 进程及网络框架 <br>
 这是个个人兴趣项目,而且现在的代码还是很粗糙，但是不妨碍你做一些常驻进程的事情。这本来是想做成一个开源的客服系统的项目，无奈搁置两年。与今年年初，花了一个月的下班晚上时间写了一个测试的程序，然后后续改进。感谢workerman,swoole,reactphp这些优秀的PHP项目<br/>
 这个项目做了这些工作<br/>

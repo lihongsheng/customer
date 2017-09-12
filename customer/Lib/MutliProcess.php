@@ -70,7 +70,7 @@ class MutliProcess
      * 子进程工作方法
      * @var string
      */
-    private $workRun;
+    //private $workRun;
 
     /**
      * 子进程工作对象
@@ -172,22 +172,11 @@ class MutliProcess
         $status = $_SERVER['argv'][2] ? $_SERVER['argv'][2] : $argv[2];
         switch ($status) {
             case "stop":
-                $pids = $this->getAllPid();
-                //var_dump($pids);
-                if(isset($pids['masterPid']) && $pids['masterPid']) {
-                    //发送 kill 信号
-                    posix_kill($pids['masterPid'],SIGINT);
-                }
-                sleep(5);
-                if(isset($pids['masterPid']) && $pids['masterPid']) {
-                    posix_kill($pids['masterPid'], SIGKILL);
-                }
-                if(isset($pids['sonPid'])) {
-                    foreach ($pids['sonPid'] as $pid) {
-                        posix_kill($pid, SIGKILL);
-                    }
-                }
+                $this->killAllProcess();
                 exit(0);
+                break;
+            case "restart":
+                $this->killAllProcess();
                 break;
             /*case "start":
                 $this->start();
@@ -199,6 +188,27 @@ class MutliProcess
                 $this->reload();
                 break;*/
             default:
+        }
+    }
+
+    /**
+     * 杀死所有进程
+     */
+    protected function killAllProcess() {
+        $pids = $this->getAllPid();
+        //var_dump($pids);
+        if(isset($pids['masterPid']) && $pids['masterPid']) {
+            //发送 kill 信号
+            posix_kill($pids['masterPid'],SIGINT);
+        }
+        sleep(5);
+        if(isset($pids['masterPid']) && $pids['masterPid']) {
+            posix_kill($pids['masterPid'], SIGKILL);
+        }
+        if(isset($pids['sonPid'])) {
+            foreach ($pids['sonPid'] as $pid) {
+                posix_kill($pid, SIGKILL);
+            }
         }
     }
 
@@ -453,11 +463,12 @@ class MutliProcess
     protected function stopAllChild() {
 
             if(!empty($this->works)) {
+
                 foreach($this->works as $val) {
                     file_put_contents("/tmp/kill.log)", "kill ".$val.PHP_EOL,FILE_APPEND);
                     posix_kill($val,SIGINT);
-                    sleep(2);
-                    posix_kill($val,SIGKILL);
+                    /*sleep(2);*/
+                    //posix_kill($val,SIGKILL);
                 }
             }
     }

@@ -105,7 +105,7 @@ class WebsocketWork
 
 
 
-        $this->event = new Event();
+        $this->event = new LibEvent();
         $this->event->add($listen, LibEvent::EV_READ,array($this,'accept'));
         Timer::init($this->event);
         Timer::add(30,array($this,'ping'));

@@ -23,8 +23,8 @@ php 进程及网络框架 <br>
                   包含信息<br/>
                   name姓名<br/>
                   status 状态<br/>
-                  pid 所在进程ID<br/>
-                  IP 所在服务器IP<br/>
+                 pid 所在进程ID<br/>
+                 IP 所在服务器IP<br/>
          3:了解解决了TCP 流的粘包问题测试了websocket,基于换行符的文本消息协议 <br/>
 
       项目目录：<br/>
@@ -32,7 +32,7 @@ php 进程及网络框架 <br>
         customer/Lib 基础类库 <br/>
         Queue：队列类，提供了基于msg扩展的一个队列可以在同一服务器间夸进程传递消息，和基于redis的list的一个队列 <br/>
         Db：数据库类 <br/>
-        Connect <br/>
+        Connect:Tcp,Udp处理链接类 <br/>
         Events：libevent,event,select的事件库 <br/>
         Protocol：消息协议类，websocket,text <br/>
         index.php 入口类 <br/>
